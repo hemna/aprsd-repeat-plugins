@@ -28,4 +28,6 @@ class VersionPlugin(plugin.APRSDRegexCommandPluginBase):
 
         LOG.info("VersionPlugin")
 
-        return aprsd_repeat_plugins.__version__
+        return "APRS REPEAT Version: {}".format(
+            aprsd_repeat_plugins.__version__,
+        )
