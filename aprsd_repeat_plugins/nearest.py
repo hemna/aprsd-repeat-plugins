@@ -3,6 +3,8 @@ import logging
 import requests
 from aprsd import plugin, plugin_utils, trace
 
+from aprsd_repeat_plugins import lat_lon
+
 
 LOG = logging.getLogger("APRSD")
 
@@ -155,7 +157,6 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             LOG.error(f"Failed to fetch aprs.fi '{ex}'")
             return "Failed to fetch aprs.fi location"
 
-        LOG.debug(f"NearestPlugin: aprs_data = {aprs_data}")
         if not len(aprs_data["entries"]):
             LOG.error("Didn't get any entries from aprs.fi")
             return "Failed to fetch aprs.fi location"
@@ -177,7 +178,6 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
         band = None
         filters = []
         for part in command_parts[1:]:
-            LOG.debug(part)
             if self.is_int(part):
                 # this is the number of stations
                 count = int(part)
@@ -296,7 +296,16 @@ class NearestObjectPlugin(NearestPlugin):
 
     version = "1.0"
     command_regex = "^[oO]"
-    command_name = "nearest"
+    command_name = "object"
+
+    def help(self):
+        _help = [
+            "object: Return nearest repeaters to your last beacon.",
+            "object: Send 'n [count] [band] [+filter]'",
+            "object: band: example: 2m, 70cm",
+            "object: filter: ex: +echo or +irlp",
+        ]
+        return _help
 
     @trace.trace
     def process(self, packet):
@@ -305,7 +314,16 @@ class NearestObjectPlugin(NearestPlugin):
 
         if data:
             callsign = data["callsign"]
-            latlon = "{:.2f}N/{:.2f}W".format(data["lat"], data["long"])
+            latitude = lat_lon.Latitude(data["lat"])
+            longitude = lat_lon.Longitude(data["long"])
+            lat = float(latitude.to_string("d%M%"))
+            lon = float(longitude.to_string("d%M%"))
+            LOG.error(f"Lat {lat} / Long {lon}")
+            lat = f"{lat:.2f}"
+            lon = f"{lon:.2f}"
+            latlon = f"{lat}N/{lon}W"
+
+            #latlon = "{:.2f}N/{:.2f}W".format(data["lat"], data["long"])
 
             uplink_tone = data["uplink_offset"]
             if self.isfloat(uplink_tone):
@@ -318,7 +336,6 @@ class NearestObjectPlugin(NearestPlugin):
             reply = "){:9s}!{}r{}Mhz T{} {}".format(
                 callsign, latlon, data["frequency"], uplink_tone, offset,
             )
-
             return reply
         else:
             return "None Found"
