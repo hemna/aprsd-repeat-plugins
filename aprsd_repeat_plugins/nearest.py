@@ -92,6 +92,12 @@ STATION_FEATURES = {
     "dstar": "dstar",
 }
 
+class NoAPRSFIApiKeyException(Exception):
+    message = "No aprs.fi ApiKey found in config"
+
+class NoAPRSFILocationException(Exception):
+    message = "Unable to find location from aprs.fi"
+
 
 class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
     """Nearest!
@@ -147,7 +153,7 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             self.config.exists(["services", "aprs.fi", "apiKey"])
         except Exception as ex:
             LOG.error(f"Failed to find config aprs.fi:apikey {ex}")
-            return "No aprs.fi apikey found"
+            raise NoAPRSFIApiKeyException()
 
         api_key = self.config["services"]["aprs.fi"]["apiKey"]
 
@@ -155,11 +161,11 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             aprs_data = plugin_utils.get_aprs_fi(api_key, fromcall)
         except Exception as ex:
             LOG.error(f"Failed to fetch aprs.fi '{ex}'")
-            return "Failed to fetch aprs.fi location"
+            raise NoAPRSFILocationException()
 
         if not len(aprs_data["entries"]):
             LOG.error("Didn't get any entries from aprs.fi")
-            return "Failed to fetch aprs.fi location"
+            raise NoAPRSFILocationException()
 
         lat = aprs_data["entries"][0]["lat"]
         lon = aprs_data["entries"][0]["lng"]
@@ -236,7 +242,15 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
     def process(self, packet):
         LOG.info("Nearest Plugin")
 
-        data = self.fetch_data(packet)
+        try:
+            data = self.fetch_data(packet)
+        except NoAPRSFILocationException as ex:
+            return ex.message
+        except NoAPRSFILocationException as ex:
+            return ex.message
+        except Exception:
+            return "Failed to fetch data"
+
 
         if data:
             # just do the first one for now
@@ -320,22 +334,37 @@ class NearestObjectPlugin(NearestPlugin):
             lon = float(longitude.to_string("d%M%"))
             LOG.error(f"Lat {lat} / Long {lon}")
             lat = f"{lat:.2f}"
-            lon = f"{lon:.2f}"
+            lon = f"{lon:.2f}".replace("-","0")
             latlon = f"{lat}N/{lon}W"
 
-            #latlon = "{:.2f}N/{:.2f}W".format(data["lat"], data["long"])
+            # latlon = "{:.2f}N/{:.2f}W".format(data["lat"], data["long"])
 
             uplink_tone = data["uplink_offset"]
             if self.isfloat(uplink_tone):
-                uplink_tone = f"{float(uplink_tone):.1f}"
+                uplink_tone = f"{float(uplink_tone):.0f}"
 
             offset = data["offset"]
             offset = f"{float(offset):.2f}"
             offset = "{}".format(offset.replace(".", ""))
 
-            reply = "){:9s}!{}r{}Mhz T{} {}".format(
-                callsign, latlon, data["frequency"], uplink_tone, offset,
+            distance = float(data["distance"])
+            distance = f"{distance / 1609:.1f}"
+
+            reply = "){:9s}!{}r {}MHz T{} {}".format(
+                 callsign, latlon, data["frequency"], uplink_tone, offset,
             )
+            freq = float(data["frequency"])
+            # tone = str(uplink_tone).replace('.','')
+            # reply = ";{:.3f}-VA*111111z{}r{:.3f}MHz T{} {}".format(
+            #reply=";{:.3f}VAA*111111z{}rT{} {}".format(
+            #        freq, latlon, uplink_tone, offset,
+            #)
+            reply="{:3.3f} MHz T{} *#{} {} miles".format(
+                    freq, uplink_tone, callsign, distance,
+            )
+            #reply = ';VE3KBR   *140033z4417.19N/07628.73Wr146.940MHz T151 -060'
+            #msg = messaging.RawMessage(reply)
+            #return msg
             return reply
         else:
             return "None Found"
