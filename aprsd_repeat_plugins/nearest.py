@@ -1,7 +1,8 @@
+import datetime
 import logging
 
 import requests
-from aprsd import plugin, plugin_utils, trace
+from aprsd import messaging, plugin, plugin_utils, trace
 
 from aprsd_repeat_plugins import lat_lon
 
@@ -160,6 +161,7 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
         try:
             aprs_data = plugin_utils.get_aprs_fi(api_key, fromcall)
         except Exception as ex:
+            LOG.exception(ex)
             LOG.error(f"Failed to fetch aprs.fi '{ex}'")
             raise NoAPRSFILocationException()
 
@@ -314,20 +316,34 @@ class NearestObjectPlugin(NearestPlugin):
 
     def help(self):
         _help = [
-            "object: Return nearest repeaters to your last beacon.",
-            "object: Send 'n [count] [band] [+filter]'",
+            "object: Return nearest repeaters as APRS object to your last beacon.",
+            "object: Send 'o [count] [band] [+filter]'",
             "object: band: example: 2m, 70cm",
             "object: filter: ex: +echo or +irlp",
         ]
         return _help
 
+    def _tone(self, tone):
+        if tone == "0":
+            uplink_tone = "off"
+        elif self.isfloat(tone):
+            uplink_tone = f"{float(tone):.0f}"
+
+        return f"T{uplink_tone}"
+
     @trace.trace
     def process(self, packet):
         LOG.info("Nearest Object Plugin")
-        data = self.fetch_data(packet)[0]
+        stations = self.fetch_data(packet)
 
-        if data:
+        if not stations:
+            return "None Found"
+
+        replies = []
+
+        for data in stations:
             callsign = data["callsign"]
+
             latitude = lat_lon.Latitude(data["lat"])
             longitude = lat_lon.Longitude(data["long"])
             lat = float(latitude.to_string("d%M%"))
@@ -337,11 +353,7 @@ class NearestObjectPlugin(NearestPlugin):
             lon = f"{lon:.2f}".replace("-","0")
             latlon = f"{lat}N/{lon}W"
 
-            # latlon = "{:.2f}N/{:.2f}W".format(data["lat"], data["long"])
-
-            uplink_tone = data["uplink_offset"]
-            if self.isfloat(uplink_tone):
-                uplink_tone = f"{float(uplink_tone):.0f}"
+            uplink_tone = self._tone(data["uplink_offset"])
 
             offset = data["offset"]
             offset = f"{float(offset):.2f}"
@@ -349,22 +361,32 @@ class NearestObjectPlugin(NearestPlugin):
 
             distance = float(data["distance"])
             distance = f"{distance / 1609:.1f}"
-
-            reply = "){:9s}!{}r {}MHz T{} {}".format(
-                 callsign, latlon, data["frequency"], uplink_tone, offset,
-            )
             freq = float(data["frequency"])
+
+            #reply = "){:9s}!{}r {}MHz T{} {}".format(
+            #     callsign, latlon, data["frequency"], uplink_tone, offset,
+            #)
             # tone = str(uplink_tone).replace('.','')
             # reply = ";{:.3f}-VA*111111z{}r{:.3f}MHz T{} {}".format(
             #reply=";{:.3f}VAA*111111z{}rT{} {}".format(
             #        freq, latlon, uplink_tone, offset,
             #)
-            reply="{:3.3f} MHz T{} *#{} {} miles".format(
-                    freq, uplink_tone, callsign, distance,
+            packet["from"]
+            fromcall = self.config["aprs"]["login"]
+            # reply="{}>{}:;{:3.3f}MHz T{} {} miles".format(
+            #     fromcall, tocall, freq, uplink_tone, distance,
+            # )
+
+            UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
+            local_datetime = datetime.datetime.strptime("2008-09-17 14:04:00", "%Y-%m-%d %H:%M:%S")
+            result_utc_datetime = local_datetime + UTC_OFFSET_TIMEDELTA
+            time_zulu = result_utc_datetime.strftime("%H%M%S")
+
+            reply="{}>APZ100:;{:9s}*{}z{}r{:.3f}MHz {} {}".format(
+                fromcall, callsign, time_zulu, latlon, freq, uplink_tone, offset,
             )
-            #reply = ';VE3KBR   *140033z4417.19N/07628.73Wr146.940MHz T151 -060'
-            #msg = messaging.RawMessage(reply)
-            #return msg
-            return reply
-        else:
-            return "None Found"
+            msg = messaging.RawMessage(reply)
+            msg.retry_count = 1
+            replies.append(msg)
+
+        return replies
