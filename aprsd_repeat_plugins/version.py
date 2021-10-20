@@ -10,7 +10,7 @@ LOG = logging.getLogger("APRSD")
 
 class VersionPlugin(plugin.APRSDRegexCommandPluginBase):
 
-    version = "1.0"
+    version = aprsd_repeat_plugins.__version__
     # Look for any command that starts with w or W
     command_regex = "^[vV]"
     # the command is for ?
