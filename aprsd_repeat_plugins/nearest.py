@@ -385,7 +385,7 @@ class NearestObjectPlugin(NearestPlugin):
             local_datetime = datetime.datetime.now()
             UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - local_datetime
             result_utc_datetime = local_datetime + UTC_OFFSET_TIMEDELTA
-            time_zulu = result_utc_datetime.strftime("%H%M%S")
+            time_zulu = result_utc_datetime.strftime("%d%H%M")
 
             reply = "{}>APZ100:;{:9s}*{}z{}r{:.3f}MHz {} {}".format(
                 fromcall, callsign, time_zulu, latlon, freq, uplink_tone, offset,
