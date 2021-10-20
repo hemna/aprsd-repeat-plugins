@@ -4,6 +4,7 @@ import logging
 import requests
 from aprsd import messaging, plugin, plugin_utils, trace
 
+import aprsd_repeat_plugins
 from aprsd_repeat_plugins import lat_lon
 
 
@@ -114,7 +115,7 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
 
     """
 
-    version = "1.0"
+    version = aprsd_repeat_plugins.__version__
     command_regex = "^[nN]"
     command_name = "nearest"
 
@@ -323,7 +324,7 @@ class NearestObjectPlugin(NearestPlugin):
 
     """
 
-    version = "1.0"
+    version = aprsd_repeat_plugins.__version__
     command_regex = "^[oO]"
     command_name = "object"
 
