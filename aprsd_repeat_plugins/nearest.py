@@ -143,6 +143,18 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
         except ValueError:
             return False
 
+    def _tone(self, tone, human=False):
+        LOG.debug(f"TONE {tone}")
+        if tone == "0" or tone == "0.0000":
+            uplink_tone = "off"
+        elif self.isfloat(tone):
+            if human:
+                uplink_tone = f"{float(tone):.1f}"
+            else:
+                uplink_tone = f"{float(tone):.0f}"
+
+        return f"T{uplink_tone}"
+
     @trace.trace
     def fetch_data(self, packet):
         fromcall = packet.get("from")
@@ -285,11 +297,9 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
                         distance = f"{distance / 1000:.1f}"
                         units = "km"
 
-                uplink_offset = entry["uplink_offset"]
-                if self.isfloat(uplink_offset):
-                    uplink_offset = f"{float(uplink_offset):.1f}"
+                uplink_offset = self._tone(entry["uplink_offset"], human=True)
 
-                reply = "{} {}{} T{} {}{} {}".format(
+                reply = "{} {}{} {} {}{} {}".format(
                     entry["callsign"],
                     entry["frequency"],
                     offset_direction,
@@ -326,13 +336,6 @@ class NearestObjectPlugin(NearestPlugin):
         ]
         return _help
 
-    def _tone(self, tone):
-        if tone == "0":
-            uplink_tone = "off"
-        elif self.isfloat(tone):
-            uplink_tone = f"{float(tone):.0f}"
-
-        return f"T{uplink_tone}"
 
     @trace.trace
     def process(self, packet):
