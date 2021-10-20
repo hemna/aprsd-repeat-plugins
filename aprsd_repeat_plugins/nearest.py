@@ -152,9 +152,18 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             if human:
                 uplink_tone = f"{float(tone):.1f}"
             else:
-                uplink_tone = f"{float(tone):.0f}"
+                tone = int(float(tone))
+                uplink_tone = f"{tone}"
 
         return f"T{uplink_tone}"
+
+    def _offset(self, offset):
+        offset = float(offset)
+        if offset < 0:
+            offset = f"{offset:.2f}"
+        else:
+            offset = f"+{offset:.2f}"
+        return "{}".format(offset.replace(".", ""))
 
     @trace.trace
     def fetch_data(self, packet):
@@ -355,41 +364,30 @@ class NearestObjectPlugin(NearestPlugin):
             longitude = lat_lon.Longitude(data["long"])
             lat = float(latitude.to_string("d%M%"))
             lon = float(longitude.to_string("d%M%"))
-            LOG.error(f"Lat {lat} / Long {lon}")
             lat = f"{lat:.2f}"
             lon = f"{lon:.2f}".replace("-","0")
             latlon = f"{lat}N/{lon}W"
 
             uplink_tone = self._tone(data["uplink_offset"])
-
-            offset = data["offset"]
-            offset = f"{float(offset):.2f}"
-            offset = "{}".format(offset.replace(".", ""))
+            offset = self._offset(data["offset"])
 
             distance = float(data["distance"])
             distance = f"{distance / 1609:.1f}"
             freq = float(data["frequency"])
 
-            #reply = "){:9s}!{}r {}MHz T{} {}".format(
-            #     callsign, latlon, data["frequency"], uplink_tone, offset,
-            #)
-            # tone = str(uplink_tone).replace('.','')
             # reply = ";{:.3f}-VA*111111z{}r{:.3f}MHz T{} {}".format(
             #reply=";{:.3f}VAA*111111z{}rT{} {}".format(
             #        freq, latlon, uplink_tone, offset,
             #)
             packet["from"]
             fromcall = self.config["aprs"]["login"]
-            # reply="{}>{}:;{:3.3f}MHz T{} {} miles".format(
-            #     fromcall, tocall, freq, uplink_tone, distance,
-            # )
 
-            UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - datetime.datetime.now()
-            local_datetime = datetime.datetime.strptime("2008-09-17 14:04:00", "%Y-%m-%d %H:%M:%S")
+            local_datetime = datetime.datetime.now()
+            UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - local_datetime
             result_utc_datetime = local_datetime + UTC_OFFSET_TIMEDELTA
             time_zulu = result_utc_datetime.strftime("%H%M%S")
 
-            reply="{}>APZ100:;{:9s}*{}z{}r{:.3f}MHz {} {}".format(
+            reply = "{}>APZ100:;{:9s}*{}z{}r{:.3f}MHz {} {}".format(
                 fromcall, callsign, time_zulu, latlon, freq, uplink_tone, offset,
             )
             msg = messaging.RawMessage(reply)
