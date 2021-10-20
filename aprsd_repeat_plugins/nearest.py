@@ -189,6 +189,9 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             if self.is_int(part):
                 # this is the number of stations
                 count = int(part)
+                # Lets max out at 10 replies
+                if count > 10:
+                    count = 10
             elif part.endswith("m"):
                 # this is the frequency band
                 if part in FREQ_BAND_PLAN:
