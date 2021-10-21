@@ -94,6 +94,9 @@ STATION_FEATURES = {
     "dstar": "dstar",
 }
 
+class InvalidRequest(Exception):
+    message = "Couldn't decipher request"
+
 class NoAPRSFIApiKeyException(Exception):
     message = "No aprs.fi ApiKey found in config"
 
@@ -195,6 +198,7 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
         lon = aprs_data["entries"][0]["lng"]
 
         command_parts = message.split(" ")
+        LOG.info(command_parts)
         # try and decipher the request parameters
         # n[earest] should be part[0]
         # part[1] could be
@@ -227,9 +231,11 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
                 filter = part[1:].lower()
                 if filter in STATION_FEATURES:
                     filters.append(STATION_FEATURES[filter])
+            elif not part:
+                continue
             else:
                 # We don't know what this is.
-                return "Usage: n [num] [band] [+filter]"
+                raise InvalidRequest()
 
         if not count:
             # They didn't specify a count
@@ -275,6 +281,8 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             return ex.message
         except NoAPRSFILocationException as ex:
             return ex.message
+        except InvalidRequest as ex:
+            return ex.message
         except Exception:
             return "Failed to fetch data"
 
@@ -285,7 +293,9 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             for entry in data:
                 LOG.info(f"Using {entry}")
 
-                if self.isfloat(entry["offset"]) and float(entry["offset"]) > 0:
+                if "offset" not in entry:
+                    offset_direction = ""
+                elif self.isfloat(entry["offset"]) and float(entry["offset"]) > 0:
                     offset_direction = "+"
                 else:
                     offset_direction = "-"
