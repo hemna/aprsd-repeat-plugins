@@ -357,6 +357,30 @@ class NearestObjectPlugin(NearestPlugin):
         return _help
 
 
+
+    def _get_latlon(self, latitude_str, longitude_str):
+        latitude = lat_lon.Latitude(latitude_str)
+        longitude = lat_lon.Longitude(longitude_str)
+        lat = abs(float(latitude.to_string("d%M%")))
+        lat_h = latitude.to_string("H%")
+        lon = abs(float(longitude.to_string("d%M%")))
+        lon_h = longitude.to_string("H%")
+
+        if lat < 1000:
+            lat = f"0{lat:.2f}{lat_h}"
+        else:
+            lat = f"{lat:.2f}{lat_h}"
+
+        if lon < 10000 and lon > 999:
+            lon = f"0{lon:.2f}{lon_h}"
+        elif lon < 1000:
+            lon = f"00{lon:.2f}{lon_h}"
+        else:
+            lon = f"{lon:.2f}{lon_h}"
+
+        latlon = f"{lat}/{lon}"
+        return latlon
+
     @trace.trace
     def process(self, packet):
         LOG.info("Nearest Object Plugin")
@@ -370,13 +394,7 @@ class NearestObjectPlugin(NearestPlugin):
         for data in stations:
             callsign = data["callsign"]
 
-            latitude = lat_lon.Latitude(data["lat"])
-            longitude = lat_lon.Longitude(data["long"])
-            lat = float(latitude.to_string("d%M%"))
-            lon = float(longitude.to_string("d%M%"))
-            lat = f"{lat:.2f}"
-            lon = f"{lon:.2f}".replace("-","0")
-            latlon = f"{lat}N/{lon}W"
+            latlon = self._get_latlon(data["lat"], data["long"])
 
             uplink_tone = self._tone(data["uplink_offset"])
             offset = self._offset(data["offset"])
