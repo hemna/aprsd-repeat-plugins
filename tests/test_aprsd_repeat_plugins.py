@@ -14,7 +14,7 @@ class TestNearestObject(unittest.TestCase):
         self.config = aprsd_config.DEFAULT_CONFIG_DICT
 
     def _nearestObject(self):
-        return  nearest.NearestObjectPlugin(config=self.config)
+        return nearest.NearestObjectPlugin(config=self.config)
 
     def test_nearest_object_latlon_US_Virginia(self):
         no = self._nearestObject()

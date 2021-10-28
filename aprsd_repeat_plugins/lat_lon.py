@@ -28,25 +28,31 @@ def cmp(a, b):
 
 class GeoCoord:
     '''
-    Abstract class representing geographic coordinates (i.e. latitude or longitude)
-    Not meant to be used directly - access through Subclasses Latitude() and Longitude()
+    Abstract class representing geographic coordinates
+     (i.e. latitude or longitude)
+    Not meant to be used directly - access through Subclasses Latitude()
+     and Longitude()
     '''
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, degree = 0, minute = 0, second = 0):
+    def __init__(self, degree=0, minute=0, second=0):
         '''
         Initialize a GeoCoord object
         Inputs:
-            degree (scalar) - integer or decimal degrees. If decimal degrees are given (e.g. 5.83),
-              the fractional values (0.83) will be added to the minute and second variables.
-            minute (scalar) - integer or decimal minutes. If decimal minutes are given (e.g. 49.17),
+            degree (scalar) - integer or decimal degrees. If decimal degrees
+              are given (e.g. 5.83),
+              the fractional values (0.83) will be added to the minute and
+              second variables.
+            minute (scalar) - integer or decimal minutes. If decimal minutes
+              are given (e.g. 49.17),
               the fractional values (0.17) will be added to the second variable.
             second (scalar) - decimal minutes.
         '''
         self.degree = float(degree)
         self.minute = float(minute)
         self.second = float(second)
-        self._update() # Clean up each variable and make them consistent
+        # Clean up each variable and make them consistent
+        self._update()
 
     def set_minute(self, minute):
         self.minute = float(minute)
@@ -69,16 +75,22 @@ class GeoCoord:
         '''
         Calculate degree, minute second from decimal degree
         '''
-        sign = cmp(decimal_degree, 0) # Store whether the coordinate is negative or positive
+        # Store whether the coordinate is negative or positive
+        sign = cmp(decimal_degree, 0)
         decimal_degree = abs(decimal_degree)
-        degree = decimal_degree//1 # Truncate degree to be an integer
-        decimal_minute = (decimal_degree - degree)*60. # Calculate the decimal minutes
-        minute = decimal_minute//1 # Truncate minute to be an integer
-        second = (decimal_minute - minute)*60. # Calculate the decimal seconds
+        # Truncate degree to be an integer
+        degree = decimal_degree//1
+        # Calculate the decimal minutes
+        decimal_minute = (decimal_degree - degree)*60.
+        # Truncate minute to be an integer
+        minute = decimal_minute//1
+        # Calculate the decimal seconds
+        second = (decimal_minute - minute)*60.
         # Finally, re-impose the appropriate sign
         degree = degree*sign
         minute = minute*sign
         second = second*sign
+
         return (degree, minute, decimal_minute, second)
 
     def _update(self):
@@ -87,8 +99,12 @@ class GeoCoord:
         consistent (for example, if minutes > 60, add extra to degrees, or if degrees is
         a decimal, add extra to minutes).
         '''
-        self.decimal_degree = self._calc_decimaldegree(self.degree, self.minute, self.second)
-        self.degree, self.minute, self.decimal_minute, self.second = self._calc_degreeminutes(self.decimal_degree)
+        self.decimal_degree = self._calc_decimaldegree(
+            self.degree,
+            self.minute, self.second,
+        )
+        self.degree, self.minute, self.decimal_minute, \
+            self.second = self._calc_degreeminutes(self.decimal_degree)
 
     @abc.abstractmethod
     def get_hemisphere(self):
@@ -129,7 +145,8 @@ class GeoCoord:
         format_elements = format_str.split("%")
         coord_list = [str(format2value.get(element, element)) for element in format_elements]
         coord_str = "".join(coord_list)
-        if "H" in format_elements: # No negative values when hemispheres are indicated
+        if "H" in format_elements:
+            # No negative values when hemispheres are indicated
             coord_str = coord_str.replace("-", "")
         return coord_str
 
@@ -197,6 +214,7 @@ class GeoCoord:
         '''
         return "GeoCoord"
 
+
 class Latitude(GeoCoord):
     '''
     Coordinate object specific for latitude coordinates
@@ -205,12 +223,15 @@ class Latitude(GeoCoord):
         '''
         Returns the hemisphere identifier for the current coordinate
         '''
-        if self.decimal_degree < 0: return "S"
-        else: return "N"
+        if self.decimal_degree < 0:
+            return "S"
+        else:
+            return "N"
 
     def set_hemisphere(self, hemi_str):
         '''
-        Given a hemisphere identifier, set the sign of the coordinate to match that hemisphere
+        Given a hemisphere identifier, set the sign of the coordinate to
+         match that hemisphere
         '''
         if hemi_str == "S":
             self.degree = abs(self.degree)*-1
@@ -228,6 +249,7 @@ class Latitude(GeoCoord):
     def __repr__(self):
         return f"Latitude {(self.__str__())}"
 
+
 class Longitude(GeoCoord):
     '''
     Coordinate object specific for longitude coordinates
@@ -235,35 +257,40 @@ class Longitude(GeoCoord):
     automatically be converted to 0 to 360 to ensure that all operations such as hemisphere
     assignment work as expected. To report in the range 0 to 360, use method range360()
     '''
-    def __init__(self, degree = 0, minute = 0, second = 0):
-        super().__init__(degree, minute, second) # Initialize the GeoCoord
-        decimal_degree = self.range180() # Make sure that longitudes are reported in the range -180 to 180
-        self.degree, self.minute, self.decimal_minute, self.second = self._calc_degreeminutes(decimal_degree)
+    def __init__(self, degree=0, minute=0, second=0):
+        # Initialize the GeoCoord
+        super().__init__(degree, minute, second)
+        # Make sure that longitudes are reported in the range -180 to 180
+        decimal_degree = self.range180()
+        self.degree, self.minute, self.decimal_minute,\
+            self.second = self._calc_degreeminutes(decimal_degree)
         self._update()
 
     def range180(self):
         '''
         Report longitudes using the range -180 to 180.
         '''
-        return ((self.decimal_degree + 180)%360) - 180
-
+        return ((self.decimal_degree + 180) % 360) - 180
 
     def range360(self):
         '''
         Report longitudes using the range 0 to 360
         '''
-        return (self.decimal_degree + 360)%360
+        return (self.decimal_degree + 360) % 360
 
     def get_hemisphere(self):
         '''
         Returns the hemisphere identifier for the current coordinate
         '''
-        if self.decimal_degree < 0: return "W"
-        else: return "E"
+        if self.decimal_degree < 0:
+            return "W"
+        else:
+            return "E"
 
     def set_hemisphere(self, hemi_str):
         '''
-        Given a hemisphere identifier, set the sign of the coordinate to match that hemisphere
+        Given a hemisphere identifier, set the sign of the coordinate to
+         match that hemisphere
         '''
         if hemi_str == "W":
             self.degree = abs(self.degree)*-1
@@ -281,25 +308,31 @@ class Longitude(GeoCoord):
     def __repr__(self):
         return f"Longitude {(self.__str__())}"
 
-def string2geocoord(coord_str, coord_class, format_str = "D"):
+
+def string2geocoord(coord_str, coord_class, format_str="D"):
     '''
     Create a GeoCoord object (e.g. Latitude or Longitude) from a string.
     Inputs:
-        coord_str (str) - a string representation of a geographic coordinate (e.g. '5.083 N'). Each
-          section of the string must be separated by some kind of a separator character ('5.083N' is
-          invalid).
-        coord_class (class) - a class inheriting from GeoCoord that includes a set_hemisphere method.
+        coord_str (str) - a string representation of a geographic coordinate
+         (e.g. '5.083 N'). Each
+          section of the string must be separated by some kind of a separator
+           character ('5.083N' is invalid).
+        coord_class (class) - a class inheriting from GeoCoord that includes a
+         set_hemisphere method.
           Can be either Latitude or Longitude
-        format_str (str) - a string representation of the sections of coord_str. Possible letter values
-        correspond to the keys of the dictionary format2value, where
+        format_str (str) - a string representation of the sections of coord_str.
+        Possible letter values correspond to the keys of the dictionary
+        format2value, where
               'H' is a hemisphere identifier (e.g. N, S, E or W)
               'D' is a coordinate in decimal degrees notation
               'd' is a coordinate in degrees notation
               'M' is a coordinate in decimal minutes notaion
               'm' is a coordinate in minutes notation
               'S' is a coordinate in seconds notation
-              Any other characters (e.g. ' ' or ', ') will be treated as a separator between the above components.
-          All components should be separated by the '%' character. For example, if the coord_str is
+              Any other characters (e.g. ' ' or ', ') will be treated as
+              a separator between the above components.
+          All components should be separated by the '%' character.
+           For example, if the coord_str is
           '5, 52, 59.88_N', the format_str would be 'd%, %m%, %S%_%H'
     Returns:
         GeoCoord object initialized with the coordinate information from coord_str
@@ -315,37 +348,57 @@ def string2geocoord(coord_str, coord_class, format_str = "D"):
         "S": new_coord.set_second,
     }
     if format_str[0] == "H":
-        ''' Having the hemisphere identifier at the beginning is problematic for ensuring that
-        the final coordinate value will be negative. Instead, change the identifier and the
-        format string so that the hemisphere is identified at the end:'''
-        new_coord_start = re.search(r"\d", coord_str).start() # Find the beginning of the coordinate
-        new_format_start = re.search("[a-gi-zA-GI-Z]", format_str).start() # Find the first non-hemisphere identifier
-        format_str = "% %".join((format_str[new_format_start:], format_str[0])) # Move hemisphere identifier to the back
-        coord_str = " ".join((coord_str[new_coord_start:], coord_str[0])) # Move hemisphere identifier to the back
+        ''' Having the hemisphere identifier at the beginning is problematic
+         for ensuring that the final coordinate value will be negative.
+         Instead, change the identifier and the
+         format string so that the hemisphere is identified at the end:
+        '''
+        # Find the beginning of the coordinate
+        new_coord_start = re.search(r"\d", coord_str).start()
+        # Find the first non-hemisphere identifier
+        new_format_start = re.search("[a-gi-zA-GI-Z]", format_str).start()
+        # Move hemisphere identifier to the back
+        format_str = "% %".join((format_str[new_format_start:], format_str[0]))
+        # Move hemisphere identifier to the back
+        coord_str = " ".join((coord_str[new_coord_start:], coord_str[0]))
     format_elements = format_str.split("%")
-    separators = [sep for sep in format_elements if sep not in format2value.keys()] # E.g. ' ', '_' or ', ' characters
-    separators.append("%") # Dummy separator for the final part of the coord_str
-    formatters = [form for form in format_elements if form in format2value.keys()] # E.g. 'D', 'm', or 'S' characters
+    # E.g. ' ', '_' or ', ' characters
+    separators = [sep for sep in format_elements if sep not in format2value.keys()]
+    # Dummy separator for the final part of the coord_str
+    separators.append("%")
+    # E.g. 'D', 'm', or 'S' characters
+    formatters = [form for form in format_elements if form in format2value.keys()]
     for form, sep in zip(formatters, separators):
         coord_elements = coord_str.split(sep)
-        format2value[form](coord_elements[0]) # Set the coordinate variable (e.g. 'self.degree' with the coordinate substring (e.g. '5')
-        coord_str = sep.join(coord_elements[1:]) # Get rid of parts of the substring that have already been done
-    new_coord._update() # Change all of the variables in the coordinate class so they are consistent with each other
+        # Set the coordinate variable (e.g. 'self.degree' with the
+        # coordinate substring (e.g. '5')
+        format2value[form](coord_elements[0])
+        # Get rid of parts of the substring that have already been done
+        coord_str = sep.join(coord_elements[1:])
+
+    # Change all of the variables in the coordinate
+    # class so they are consistent with each other
+    new_coord._update()
     return new_coord
+
 
 class LatLon:
     '''
     Object representing lat/lon pairs
     '''
-    def __init__(self, lat, lon, name = None):
+    def __init__(self, lat, lon, name=None):
         '''
         Input:
-            lat (class instance or scalar) - an instance of class Latitude or a scalar. A Latitude object
-              can be instantiated directly in the __init__ call for example by calling LatLon(Latitude(5.8),
-              Longitude(162.5)). If lat is specified as a scalar, the scalar will be assumed to be in
-              decimal degrees.
-            lon (class instance or scalar) - an instance of class Longitude or a scalar. If lat is
-              specified as a scalar, the scalar will be assumed to be in decimal degrees.
+            lat (class instance or scalar) - an instance of class Latitude or a
+              scalar. A Latitude object
+              can be instantiated directly in the __init__ call for example
+              by calling LatLon(Latitude(5.8),
+              Longitude(162.5)). If lat is specified as a scalar, the scalar
+                will be assumed to be in decimal degrees.
+            lon (class instance or scalar) - an instance of class Longitude or
+              a scalar. If lat is
+              specified as a scalar, the scalar will be assumed to be
+               in decimal degrees.
             name (str) - an identifier
         '''
         try:
@@ -378,7 +431,7 @@ class LatLon:
         '''
         return self.lat.decimal_degree + 1j * self.lon.decimal_degree
 
-    def _pyproj_inv(self, other, ellipse = "WGS84"):
+    def _pyproj_inv(self, other, ellipse="WGS84"):
         '''
         Perform Pyproj's inv operation on two LatLon objects
         Returns the initial heading and reverse heading in degrees, and the distance
@@ -386,12 +439,22 @@ class LatLon:
         '''
         lat1, lon1 = self.lat.decimal_degree, self.lon.decimal_degree
         lat2, lon2 = other.lat.decimal_degree, other.lon.decimal_degree
-        g = pyproj.Geod(ellps = ellipse)
-        heading_initial, heading_reverse, distance = g.inv(lon1, lat1, lon2, lat2, radians = False)
+        g = pyproj.Geod(ellps=ellipse)
+        heading_initial, heading_reverse, distance = g.inv(
+            lon1, lat1, lon2,
+            lat2,
+            radians=False,
+        )
         distance = distance/1000.0
-        if heading_initial == 0.0: # Reverse heading not well handled for coordinates that are directly south
+        # Reverse heading not well handled for coordinates that are
+        # directly south
+        if heading_initial == 0.0:
             heading_reverse = 180.0
-        return {"heading_initial": heading_initial, "heading_reverse": heading_reverse, "distance": distance}
+        return {
+            "heading_initial": heading_initial,
+            "heading_reverse": heading_reverse,
+            "distance": distance,
+        }
 
     def heading_initial(self, other, **kwargs):
         '''
@@ -417,7 +480,7 @@ class LatLon:
         '''
         return self._pyproj_inv(other, **kwargs)["distance"]
 
-    def distance_sphere(self, other, radius = 6371.0):
+    def distance_sphere(self, other, radius=6371.0):
         '''
         -- Deprecated in v0.70. Use distance(other, ellipse = 'sphere') instead --
 
@@ -436,8 +499,8 @@ class LatLon:
         phi1 = (90. - lat1)*pi
         phi2 = (90. - lat2)*pi
         # theta is longitude
-        theta1 = lon1*pi
-        theta2 = lon2 *pi
+        theta1 = lon1 * pi
+        theta2 = lon2 * pi
         cos = (
             math.sin(phi1)*math.sin(phi2)*math.cos(theta1 - theta2) +
             math.cos(phi1)*math.cos(phi2)
@@ -445,18 +508,22 @@ class LatLon:
         arc = math.acos(cos)
         return arc*radius
 
-    def offset(self, heading_initial, distance, ellipse = "WGS84"):
+    def offset(self, heading_initial, distance, ellipse="WGS84"):
         '''
         Offset a LatLon object by a heading (in degrees) and distance (in km)
         to return a new LatLon object
         '''
         lat1, lon1 = self.lat.decimal_degree, self.lon.decimal_degree
-        g = pyproj.Geod(ellps = ellipse)
-        distance = distance * 1000 # Convert km to meters
-        lon2, lat2, back_bearing = g.fwd(lon1, lat1, heading_initial, distance, radians = False)
+        g = pyproj.Geod(ellps=ellipse)
+        # Convert km to meters
+        distance = distance * 1000
+        lon2, lat2, back_bearing = g.fwd(
+            lon1, lat1, heading_initial,
+            distance, radians=False,
+        )
         return LatLon(Latitude(lat2), Longitude(lon2))
 
-    def to_string(self, formatter = "D"):
+    def to_string(self, formatter="D"):
         '''
         Return string representation of lat and lon as a 2-element tuple
         using the format specified by formatter
@@ -468,9 +535,12 @@ class LatLon:
         Called when subtracting a GeoVector object from self
         '''
         heading, distance = other()
-        heading = (heading + 180)%360 # Flip heading
-        new_latlon = LatLon(self.lat, self.lon) # Copy current position
-        return new_latlon.offset(heading, distance) # Offset position by GeoVector
+        # Flip heading
+        heading = (heading + 180) % 360
+        # Copy current position
+        new_latlon = LatLon(self.lat, self.lon)
+        # Offset position by GeoVector
+        return new_latlon.offset(heading, distance)
 
     def _sub_latlon(self, other):
         '''
@@ -479,9 +549,9 @@ class LatLon:
         inv = self._pyproj_inv(other)
         heading = inv["heading_reverse"]
         distance = inv["distance"]
-        return GeoVector(initial_heading = heading, distance = distance)
+        return GeoVector(initial_heading=heading, distance=distance)
 
-    def almost_equal(self, other, e = 0.000001):
+    def almost_equal(self, other, e=0.000001):
         '''
         Sometimes required for comparing LatLon coordinates if float error has
         occurred. Determine if self and other (another LatLon coordinate) are
@@ -547,12 +617,13 @@ class LatLon:
         '''
         return "LatLon"
 
+
 def string2latlon(lat_str, lon_str, format_str):
     '''
     Create a LatLon object from a pair of strings.
     Inputs:
-        lat_str (str) - string representation of a latitude (e.g. '5 52 59.88 N')
-        lon_str (str) - string representation of a longitude (e.g. '162 4 59.88 W')
+        lat_str (str) - string representation of latitude (e.g. '5 52 59.88 N')
+        lon_str (str) - string representation of longitude (e.g. '162 4 59.88 W')
         format_str (str) - format in which the coordinate strings are given (e.g.
           for the above examples this would be 'd% %m% %S% %H'). See function
           string2geocoord for a detailed explanation on how to specify formats.
@@ -561,8 +632,9 @@ def string2latlon(lat_str, lon_str, format_str):
     '''
     lat = string2geocoord(lat_str, Latitude, format_str)
     lon = string2geocoord(lon_str, Longitude, format_str)
-    new_latlon = LatLon(lat = lat, lon = lon)
+    new_latlon = LatLon(lat=lat, lon=lon)
     return new_latlon
+
 
 class GeoVector:
     '''
@@ -572,7 +644,7 @@ class GeoVector:
         2. Passing initial_heading and distance keyword arguments
         3. Subtracting two LatLon objects
     '''
-    def __init__(self, dx = None, dy = None, initial_heading = None, distance = None):
+    def __init__(self, dx=None, dy=None, initial_heading=None, distance=None):
         '''
         Create a GeoVector object
         Inputs:
@@ -581,19 +653,25 @@ class GeoVector:
             initial_heading (scalar) - the initial heading of the vector in degrees
             distance (scalar) - the magnitude of the vector in km
         '''
-        if dx == None and dy == None: # If only initial_heading and distance are given
+        if dx is None and dy is None:
+            # If only initial_heading and distance are given
             self.heading = initial_heading
-            theta = self._angle_or_heading(self.heading) # Convert heading to angle
+            # Convert heading to angle
+            theta = self._angle_or_heading(self.heading)
             theta_rad = math.radians(theta)
             self.magnitude = distance
             self.dx = self.magnitude * math.cos(theta_rad)
             self.dy = self.magnitude * math.sin(theta_rad)
-        elif initial_heading == None and distance == None: # If only dx and dy are given
+        elif initial_heading is None and distance is None:
+            # If only dx and dy are given
             self.dx = dx
             self.dy = dy
             self._update()
         else:
-            raise NameError("Class GeoVector requires two arguments (dx and dy or initial_heading and distance)")
+            raise NameError(
+                "Class GeoVector requires two arguments"
+                " (dx and dy or initial_heading and distance)",
+            )
 
     def __call__(self):
         return self.heading, self.magnitude
@@ -605,7 +683,7 @@ class GeoVector:
         at coordinates (0, 1) or due North and going counterclockwise to
         360) or vice versa.
         '''
-        heading_or_angle = (90 - angle_or_heading)%360
+        heading_or_angle = (90 - angle_or_heading) % 360
         return heading_or_angle
 
     def _update(self):
@@ -615,15 +693,18 @@ class GeoVector:
         try:
             theta_radians = math.atan(float(self.dy)/self.dx)
         except ZeroDivisionError:
-            if self.dy > 0: theta_radians = 0.5*math.pi
-            elif self.dy < 0: theta_radians = 1.5*math.pi
+            if self.dy > 0:
+                theta_radians = 0.5*math.pi
+            elif self.dy < 0:
+                theta_radians = 1.5*math.pi
             self.magnitude = self.dy
         else:
             self.magnitude = 1./(math.cos(theta_radians))*self.dx
         theta = math.degrees(theta_radians)
-        self.heading = self._angle_or_heading(theta) # Convert angle to heading
+        # Convert angle to heading
+        self.heading = self._angle_or_heading(theta)
 
-    def almost_equals(self, other, e = 0.000001):
+    def almost_equals(self, other, e=0.000001):
         '''
         Sometimes required for comparing GeoVectors if float error has
         occurred. Determine if self and other (another GeoVector) are
@@ -671,7 +752,10 @@ class GeoVector:
 
     def __mul__(self, other):
         # other is a scalar
-        return GeoVector(initial_heading = self.heading, distance = self.magnitude * other)
+        return GeoVector(
+            initial_heading=self.heading,
+            distance=self.magnitude * other,
+        )
 
     def __imul__(self, other):
         # other is a scalar
@@ -683,7 +767,10 @@ class GeoVector:
 
     def __div__(self, other):
         # other is a scalar
-        return GeoVector(initial_heading = self.heading, distance = self.magnitude / other)
+        return GeoVector(
+            initial_heading=self.heading,
+            distance=self.magnitude / other,
+        )
 
     def __idiv__(self, other):
         # other is a scalar
@@ -705,36 +792,82 @@ class GeoVector:
         '''
         return "GeoVector"
 
+
 def demonstration():
-    palmyra = LatLon(Latitude(5.8833), Longitude(-162.0833)) # Try instantiating Latitude and Longitude objects in call
-    palmyra # Returns 'Latitude 5.8833, Longitude -162.0833'
-    palmyra = LatLon(5.8833, -162.0833) # Or even simpler - initialize from two scalars expressing decimal degrees
-    piss = LatLon(37.34889984, -79.16819763)
-    print(piss)
-    print(piss.to_string("D"))
-    print(piss.to_string("d%M%")) # Print coordinates as degree minutes separated by underscore (returns ('5_52.998', '-162_4.998'))
+    # Try instantiating Latitude and Longitude objects in call
+    # palmyra = LatLon(Latitude(5.8833), Longitude(-162.0833))
+    # Returns 'Latitude 5.8833, Longitude -162.0833'
+    palmyra = 1
+    # Or even simpler - initialize from two scalars expressing decimal degrees
+    # palmyra = LatLon(5.8833, -162.0833)
+    lat = Latitude(37.58509827)
+    lon = Longitude(-79.05139923)
+    latf = float(lat.to_string("d%M%"))
+    lat_h = lat.to_string("H%")
+    lonf = abs(float(lon.to_string("d%M%")))
+
+    lon_h = lon.to_string("H%")
+    lat_str = f"{latf:.2f}{lat_h}"
+    if lonf < 10000 and lonf > 999:
+        lon_str = f"0{lonf:.2f}{lon_h}"
+    if lonf < 1000:
+        lon_str = f"00{lonf:.2f}{lon_h}"
+    else:
+        lon_str = f"{lonf:.2f}{lon_h}"
+
+    print(f"{lat_str}/{lon_str}")
+
     sys.exit(0)
-    print(palmyra) # Returns '5.8833, -162.0833'
-    palmyra = LatLon(Latitude(degree = 5, minute = 52, second = 59.88), Longitude(degree = -162, minute = -4.998)) # or more complicated!
-    print(palmyra.to_string("d% %m% %S% %H")) # Print coordinates to degree minute second (returns ('5 52 59.88 N', '162 4 59.88 W'))
-    palmyra = string2latlon("5 52 59.88 N", "162 4 59.88 W", "d% %m% %S% %H") # Initialize from more complex string
-    print("peepis")
-    print(palmyra.to_string("d%_%M")) # Print coordinates as degree minutes separated by underscore (returns ('5_52.998', '-162_4.998'))
-    palmyra = string2latlon("N 5, 52.998", "W 162, 4.998", "H% %d%, %M") # An alternative complex string
-    print(palmyra.to_string("D")) # Print coordinate to decimal degrees (returns ('5.8833', '-162.0833'))
-    print("anal")
+    test = LatLon(37.58509827, -79.05139923)
+    print(test)
+    print(test.to_string("D"))
+    # Print coordinates as degree minutes separated by underscore
+    # (returns ('5_52.998', '-162_4.998'))
+    print(test.to_string("d%M%"))
+
+    sys.exit(0)
+    # Returns '5.8833, -162.0833'
+    print(palmyra)
+
+    # or more complicated!
+    palmyra = LatLon(
+        Latitude(degree=5, minute=52, second=59.88),
+        Longitude(degree=-162, minute=-4.998),
+    )
+    # Print coordinates to degree minute second
+    # (returns ('5 52 59.88 N', '162 4 59.88 W'))
+    print(palmyra.to_string("d% %m% %S% %H"))
+    palmyra = string2latlon("5 52 59.88 N", "162 4 59.88 W", "d% %m% %S% %H")
+    # Initialize from more complex string
+    # Print coordinates as degree minutes separated by underscore
+    # (returns ('5_52.998', '-162_4.998'))
+    print(palmyra.to_string("d%_%M"))
+    # An alternative complex string
+    palmyra = string2latlon("N 5, 52.998", "W 162, 4.998", "H% %d%, %M")
+    # Print coordinate to decimal degrees (returns ('5.8833', '-162.0833'))
+    print(palmyra.to_string("D"))
     honolulu = LatLon(Latitude(21.3), Longitude(-157.8167))
-    print(palmyra.distance(honolulu, ellipse = "sphere")) # FAI distance is 1774.77188181 km
-    distance = palmyra.distance(honolulu) # WGS84 distance is 1766.69130376 km
+    # FAI distance is 1774.77188181 km
+    print(palmyra.distance(honolulu, ellipse="sphere"))
+    # WGS84 distance is 1766.69130376 km
+    distance = palmyra.distance(honolulu)
     print(distance)
-    initial_heading = palmyra.heading_initial(honolulu) # Initial heading to Honolulu on WGS84 ellipsoid
+    # Initial heading to Honolulu on WGS84 ellipsoid
+    initial_heading = palmyra.heading_initial(honolulu)
     print(initial_heading)
-    hnl = palmyra.offset(initial_heading, distance) # Reconstruct lat/lon for Honolulu based on offset from Palmyra
-    print(hnl.to_string("D")) # Coordinates of Honolulu are latitude 21.3, longitude -157.8167
-    vector = (honolulu - palmyra) * 2 # A GeoVector with heading equal to the vector between palmyra and honolulu, but 2x the magnitude
-    print(vector) # Print heading and magnitude
-    print(f"{str(palmyra) + str(vector/2.0)}") # Recreate the coordinates of Honolulu by adding half of vector to palmyra
+    # Reconstruct lat/lon for Honolulu based on offset from Palmyra
+    hnl = palmyra.offset(initial_heading, distance)
+    # Coordinates of Honolulu are latitude 21.3, longitude -157.8167
+    print(hnl.to_string("D"))
+    # A GeoVector with heading equal to the vector between palmyra and
+    # honolulu, but 2x the magnitude
+    vector = (honolulu - palmyra) * 2
+    # Print heading and magnitude
+    print(vector)
+    # Recreate the coordinates of Honolulu by adding half of vector to palmyra
+    print(f"{str(palmyra) + str(vector/2.0)}")
     print("Finished running demonstration!")
+
 
 if __name__ == "__main__":
     demonstration()

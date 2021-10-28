@@ -94,11 +94,14 @@ STATION_FEATURES = {
     "dstar": "dstar",
 }
 
+
 class InvalidRequest(Exception):
     message = "Couldn't decipher request"
 
+
 class NoAPRSFIApiKeyException(Exception):
     message = "No aprs.fi ApiKey found in config"
+
 
 class NoAPRSFILocationException(Exception):
     message = "Unable to find location from aprs.fi"
@@ -286,7 +289,6 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
         except Exception:
             return "Failed to fetch data"
 
-
         if data:
             # just do the first one for now
             replies = []
@@ -356,8 +358,6 @@ class NearestObjectPlugin(NearestPlugin):
         ]
         return _help
 
-
-
     def _get_latlon(self, latitude_str, longitude_str):
         latitude = lat_lon.Latitude(latitude_str)
         longitude = lat_lon.Longitude(longitude_str)
@@ -404,9 +404,9 @@ class NearestObjectPlugin(NearestPlugin):
             freq = float(data["frequency"])
 
             # reply = ";{:.3f}-VA*111111z{}r{:.3f}MHz T{} {}".format(
-            #reply=";{:.3f}VAA*111111z{}rT{} {}".format(
+            # reply=";{:.3f}VAA*111111z{}rT{} {}".format(
             #        freq, latlon, uplink_tone, offset,
-            #)
+            # )
             packet["from"]
             fromcall = self.config["aprs"]["login"]
 
