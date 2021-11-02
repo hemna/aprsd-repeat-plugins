@@ -5,7 +5,6 @@ import requests
 from aprsd import messaging, plugin, plugin_utils, trace
 
 import aprsd_repeat_plugins
-from aprsd_repeat_plugins import lat_lon
 
 
 LOG = logging.getLogger("APRSD")
@@ -358,28 +357,87 @@ class NearestObjectPlugin(NearestPlugin):
         ]
         return _help
 
+    def decdeg2dms(self, degrees_decimal):
+        is_positive = degrees_decimal >= 0
+        degrees_decimal = abs(degrees_decimal)
+        minutes, seconds = divmod(degrees_decimal * 3600, 60)
+        degrees, minutes = divmod(minutes, 60)
+        degrees = degrees if is_positive else -degrees
+
+        #degrees = str(int(degrees)).zfill(2).replace("-", "0")
+        degrees = str(int(degrees)).replace("-", "0")
+        #minutes = str(int(minutes)).zfill(2).replace("-", "0")
+        minutes = str(int(minutes)).replace("-", "0")
+        #seconds = str(int(round(seconds * 0.01, 2) * 100)).zfill(2)
+        seconds = str(int(round(seconds * 0.01, 2) * 100))
+
+        return {"degrees": degrees, "minutes": minutes, "seconds": seconds}
+
+    @trace.trace
+    def decdeg2dmm_m(self, degrees_decimal):
+        is_positive = degrees_decimal >= 0
+        degrees_decimal = abs(degrees_decimal)
+        minutes, seconds = divmod(degrees_decimal * 3600, 60)
+        degrees, minutes = divmod(minutes, 60)
+        degrees = degrees if is_positive else -degrees
+
+        #degrees = str(int(degrees)).zfill(2).replace("-", "0")
+        degrees = abs(int(degrees))
+        #minutes = str(round(minutes + (seconds / 60), 2)).zfill(5)
+        minutes = int(round(minutes + (seconds / 60), 2))
+        hundredths = round(seconds / 60, 2)
+
+        return {
+            "degrees": degrees, "minutes": minutes, "seconds": seconds,
+            "hundredths": hundredths,
+        }
+
+    def convert_latitude(self, degrees_decimal):
+        det = self.decdeg2dmm_m(degrees_decimal)
+        if degrees_decimal > 0:
+            direction = "N"
+        else:
+            direction = "S"
+
+        degrees = str(det.get("degrees")).zfill(2)
+        minutes = str(det.get("minutes")).zfill(2)
+        det.get("seconds")
+        hundredths = str(det.get("hundredths")).split(".")[1]
+
+        LOG.debug(
+            f"LAT degress {degrees}  minutes {str(minutes)} "
+            "seconds {seconds} hundredths {hundredths} direction {direction}",
+        )
+
+        lat = f"{degrees}{str(minutes)}.{hundredths}{direction}"
+        return lat
+
+    def convert_longitude(self, degrees_decimal):
+        det = self.decdeg2dmm_m(degrees_decimal)
+        if degrees_decimal > 0:
+            direction = "E"
+        else:
+            direction = "W"
+
+        degrees = str(det.get("degrees")).zfill(3)
+        minutes = str(det.get("minutes")).zfill(2)
+        det.get("seconds")
+        hundredths = str(det.get("hundredths")).split(".")[1]
+
+        LOG.debug(
+            f"LON degress {degrees}  minutes {str(minutes)} "
+            "seconds {seconds} hundredths {hundredths} direction {direction}",
+        )
+
+        lon = f"{degrees}{str(minutes)}.{hundredths}{direction}"
+        return lon
+
+    @trace.trace
     def _get_latlon(self, latitude_str, longitude_str):
-        latitude = lat_lon.Latitude(latitude_str)
-        longitude = lat_lon.Longitude(longitude_str)
-        lat = abs(float(latitude.to_string("d%M%")))
-        lat_h = latitude.to_string("H%")
-        lon = abs(float(longitude.to_string("d%M%")))
-        lon_h = longitude.to_string("H%")
-
-        if lat < 1000:
-            lat = f"0{lat:.2f}{lat_h}"
-        else:
-            lat = f"{lat:.2f}{lat_h}"
-
-        if lon < 10000 and lon > 999:
-            lon = f"0{lon:.2f}{lon_h}"
-        elif lon < 1000:
-            lon = f"00{lon:.2f}{lon_h}"
-        else:
-            lon = f"{lon:.2f}{lon_h}"
-
-        latlon = f"{lat}/{lon}"
-        return latlon
+        return "{}/{}".format(
+                self.convert_latitude(float(latitude_str)),
+                self.convert_longitude(float(longitude_str)),
+        )
 
     @trace.trace
     def process(self, packet):

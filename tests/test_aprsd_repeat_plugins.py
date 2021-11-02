@@ -22,7 +22,7 @@ class TestNearestObject(unittest.TestCase):
         lat_str = "37.58509827"
         lon_str = "-79.05139923"
         actual = no._get_latlon(lat_str, lon_str)
-        expected = "3735.11N/00793.08W"
+        expected = "3735.11N/07903.08W"
         self.assertEqual(expected, actual)
 
     def test_nearest_object_latlon_US_California(self):
@@ -49,7 +49,7 @@ class TestNearestObject(unittest.TestCase):
         lat_str = "-12.0943"
         lon_str = "-77.0164"
         actual = no._get_latlon(lat_str, lon_str)
-        expected = "0125.66S/00770.98W"
+        expected = "1205.66S/07700.98W"
         self.assertEqual(expected, actual)
 
     def test_nearest_object_latlon_Germany(self):
