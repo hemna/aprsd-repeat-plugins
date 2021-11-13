@@ -401,12 +401,13 @@ class NearestObjectPlugin(NearestPlugin):
 
         degrees = str(det.get("degrees")).zfill(2)
         minutes = str(det.get("minutes")).zfill(2)
-        det.get("seconds")
-        hundredths = str(det.get("hundredths")).split(".")[1]
+        seconds = det.get("seconds")
+        hun = det.get("hundredths")
+        hundredths = f"{hun:.2f}".split(".")[1]
 
         LOG.debug(
             f"LAT degress {degrees}  minutes {str(minutes)} "
-            "seconds {seconds} hundredths {hundredths} direction {direction}",
+            f"seconds {seconds} hundredths {hundredths} direction {direction}",
         )
 
         lat = f"{degrees}{str(minutes)}.{hundredths}{direction}"
@@ -421,12 +422,13 @@ class NearestObjectPlugin(NearestPlugin):
 
         degrees = str(det.get("degrees")).zfill(3)
         minutes = str(det.get("minutes")).zfill(2)
-        det.get("seconds")
-        hundredths = str(det.get("hundredths")).split(".")[1]
+        seconds = det.get("seconds")
+        hun = det.get("hundredths")
+        hundredths = f"{hun:.2f}".split(".")[1]
 
         LOG.debug(
             f"LON degress {degrees}  minutes {str(minutes)} "
-            "seconds {seconds} hundredths {hundredths} direction {direction}",
+            f"seconds {seconds} hundredths {hundredths} direction {direction}",
         )
 
         lon = f"{degrees}{str(minutes)}.{hundredths}{direction}"
