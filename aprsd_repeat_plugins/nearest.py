@@ -364,11 +364,11 @@ class NearestObjectPlugin(NearestPlugin):
         degrees, minutes = divmod(minutes, 60)
         degrees = degrees if is_positive else -degrees
 
-        #degrees = str(int(degrees)).zfill(2).replace("-", "0")
+        # degrees = str(int(degrees)).zfill(2).replace("-", "0")
         degrees = str(int(degrees)).replace("-", "0")
-        #minutes = str(int(minutes)).zfill(2).replace("-", "0")
+        # minutes = str(int(minutes)).zfill(2).replace("-", "0")
         minutes = str(int(minutes)).replace("-", "0")
-        #seconds = str(int(round(seconds * 0.01, 2) * 100)).zfill(2)
+        # seconds = str(int(round(seconds * 0.01, 2) * 100)).zfill(2)
         seconds = str(int(round(seconds * 0.01, 2) * 100))
 
         return {"degrees": degrees, "minutes": minutes, "seconds": seconds}
@@ -381,9 +381,9 @@ class NearestObjectPlugin(NearestPlugin):
         degrees, minutes = divmod(minutes, 60)
         degrees = degrees if is_positive else -degrees
 
-        #degrees = str(int(degrees)).zfill(2).replace("-", "0")
+        # degrees = str(int(degrees)).zfill(2).replace("-", "0")
         degrees = abs(int(degrees))
-        #minutes = str(round(minutes + (seconds / 60), 2)).zfill(5)
+        # minutes = str(round(minutes + (seconds / 60), 2)).zfill(5)
         minutes = int(round(minutes + (seconds / 60), 2))
         hundredths = round(seconds / 60, 2)
 
