@@ -259,7 +259,10 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
                 self.config["services"]["haminfo"]["base_url"],
             )
             api_key = self.config["services"]["haminfo"]["apiKey"]
-            params = {"lat": lat, "lon": lon, "count": count, "band": band}
+            params = {
+                "lat": lat, "lon": lon, "count": count, "band": band,
+                "callsign": fromcall,
+            }
             if filters:
                 params["filters"] = ",".join(filters)
 
