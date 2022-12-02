@@ -1,4 +1,4 @@
-'''
+"""
 Methods for representing geographic coordinates (latitude and longitude)
 Features:
     Convert lat/lon strings from any format into a LatLon object
@@ -9,14 +9,13 @@ Features:
     Calculate distances between lat/lon pairs using either the FAI or WGS84 approximation
 Written July 22, 2014
 Author: Gen Del Raye
-'''
+"""
 # TODO: Write methods to convert -180 to 180 longitudes to 0 to 360 and vice versa
 
 
 import abc
 import math
 import re
-import sys
 import warnings
 
 import pyproj
@@ -27,16 +26,16 @@ def cmp(a, b):
 
 
 class GeoCoord:
-    '''
+    """
     Abstract class representing geographic coordinates
      (i.e. latitude or longitude)
     Not meant to be used directly - access through Subclasses Latitude()
      and Longitude()
-    '''
+    """
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, degree=0, minute=0, second=0):
-        '''
+        """
         Initialize a GeoCoord object
         Inputs:
             degree (scalar) - integer or decimal degrees. If decimal degrees
@@ -47,7 +46,7 @@ class GeoCoord:
               are given (e.g. 49.17),
               the fractional values (0.17) will be added to the second variable.
             second (scalar) - decimal minutes.
-        '''
+        """
         self.degree = float(degree)
         self.minute = float(minute)
         self.second = float(second)
@@ -65,16 +64,16 @@ class GeoCoord:
 
     @staticmethod
     def _calc_decimaldegree(degree, minute, second):
-        '''
+        """
         Calculate decimal degree form degree, minute, second
-        '''
+        """
         return degree + minute/60. + second/3600.
 
     @staticmethod
     def _calc_degreeminutes(decimal_degree):
-        '''
+        """
         Calculate degree, minute second from decimal degree
-        '''
+        """
         # Store whether the coordinate is negative or positive
         sign = cmp(decimal_degree, 0)
         decimal_degree = abs(decimal_degree)
@@ -94,11 +93,11 @@ class GeoCoord:
         return (degree, minute, decimal_minute, second)
 
     def _update(self):
-        '''
+        """
         Given degree, minute, and second information, clean up the variables and make them
         consistent (for example, if minutes > 60, add extra to degrees, or if degrees is
         a decimal, add extra to minutes).
-        '''
+        """
         self.decimal_degree = self._calc_decimaldegree(
             self.degree,
             self.minute, self.second,
@@ -108,18 +107,18 @@ class GeoCoord:
 
     @abc.abstractmethod
     def get_hemisphere(self):
-        '''
+        """
         Dummy method, used in child classes such as Latitude and Longitude
-        '''
+        """
 
     @abc.abstractmethod
     def set_hemisphere(self):
-        '''
+        """
         Dummy method, used in child classes such as Latitude and Longitude
-        '''
+        """
 
     def to_string(self, format_str):
-        '''
+        """
         Output lat, lon coordinates as string in chosen format
         Inputs:
             format (str) - A string of the form A%B%C where A, B and C are identifiers.
@@ -133,7 +132,7 @@ class GeoCoord:
             ('N 5.8833', 'W 162.0833')
             >> palmyra.to_string('d%_%M')
             ('5_52.998', '-162_4.998')
-        '''
+        """
         format2value = {
             "H": self.get_hemisphere(),
             "M": abs(self.decimal_minute),
@@ -209,30 +208,30 @@ class GeoCoord:
         return self.__str__()
 
     def type(self):
-        '''
+        """
         Identifies the object type
-        '''
+        """
         return "GeoCoord"
 
 
 class Latitude(GeoCoord):
-    '''
+    """
     Coordinate object specific for latitude coordinates
-    '''
+    """
     def get_hemisphere(self):
-        '''
+        """
         Returns the hemisphere identifier for the current coordinate
-        '''
+        """
         if self.decimal_degree < 0:
             return "S"
         else:
             return "N"
 
     def set_hemisphere(self, hemi_str):
-        '''
+        """
         Given a hemisphere identifier, set the sign of the coordinate to
          match that hemisphere
-        '''
+        """
         if hemi_str == "S":
             self.degree = abs(self.degree)*-1
             self.minute = abs(self.minute)*-1
@@ -251,12 +250,12 @@ class Latitude(GeoCoord):
 
 
 class Longitude(GeoCoord):
-    '''
+    """
     Coordinate object specific for longitude coordinates
     Langitudes outside the range -180 to 180 (i.e. those reported in the range 0 to 360) will
     automatically be converted to 0 to 360 to ensure that all operations such as hemisphere
     assignment work as expected. To report in the range 0 to 360, use method range360()
-    '''
+    """
     def __init__(self, degree=0, minute=0, second=0):
         # Initialize the GeoCoord
         super().__init__(degree, minute, second)
@@ -267,31 +266,31 @@ class Longitude(GeoCoord):
         self._update()
 
     def range180(self):
-        '''
+        """
         Report longitudes using the range -180 to 180.
-        '''
+        """
         return ((self.decimal_degree + 180) % 360) - 180
 
     def range360(self):
-        '''
+        """
         Report longitudes using the range 0 to 360
-        '''
+        """
         return (self.decimal_degree + 360) % 360
 
     def get_hemisphere(self):
-        '''
+        """
         Returns the hemisphere identifier for the current coordinate
-        '''
+        """
         if self.decimal_degree < 0:
             return "W"
         else:
             return "E"
 
     def set_hemisphere(self, hemi_str):
-        '''
+        """
         Given a hemisphere identifier, set the sign of the coordinate to
          match that hemisphere
-        '''
+        """
         if hemi_str == "W":
             self.degree = abs(self.degree)*-1
             self.minute = abs(self.minute)*-1
@@ -303,14 +302,17 @@ class Longitude(GeoCoord):
             self.second = abs(self.second)
             self._update()
         else:
-            raise(ValueError, "Hemisphere identifier for longitudes must be E or W")
+            raise (
+                ValueError,
+                "Hemisphere identifier for longitudes must be E or W",
+            )
 
     def __repr__(self):
         return f"Longitude {(self.__str__())}"
 
 
 def string2geocoord(coord_str, coord_class, format_str="D"):
-    '''
+    """
     Create a GeoCoord object (e.g. Latitude or Longitude) from a string.
     Inputs:
         coord_str (str) - a string representation of a geographic coordinate
@@ -336,7 +338,7 @@ def string2geocoord(coord_str, coord_class, format_str="D"):
           '5, 52, 59.88_N', the format_str would be 'd%, %m%, %S%_%H'
     Returns:
         GeoCoord object initialized with the coordinate information from coord_str
-    '''
+    """
     new_coord = coord_class()
     # Dictionary of functions for setting variables in the coordinate class:
     format2value = {
@@ -348,11 +350,11 @@ def string2geocoord(coord_str, coord_class, format_str="D"):
         "S": new_coord.set_second,
     }
     if format_str[0] == "H":
-        ''' Having the hemisphere identifier at the beginning is problematic
+        """ Having the hemisphere identifier at the beginning is problematic
          for ensuring that the final coordinate value will be negative.
          Instead, change the identifier and the
          format string so that the hemisphere is identified at the end:
-        '''
+        """
         # Find the beginning of the coordinate
         new_coord_start = re.search(r"\d", coord_str).start()
         # Find the first non-hemisphere identifier
@@ -383,11 +385,11 @@ def string2geocoord(coord_str, coord_class, format_str="D"):
 
 
 class LatLon:
-    '''
+    """
     Object representing lat/lon pairs
-    '''
+    """
     def __init__(self, lat, lon, name=None):
-        '''
+        """
         Input:
             lat (class instance or scalar) - an instance of class Latitude or a
               scalar. A Latitude object
@@ -400,7 +402,7 @@ class LatLon:
               specified as a scalar, the scalar will be assumed to be
                in decimal degrees.
             name (str) - an identifier
-        '''
+        """
         try:
             if lat.type() == "GeoCoord":
                 self.lat = lat
@@ -432,11 +434,11 @@ class LatLon:
         return self.lat.decimal_degree + 1j * self.lon.decimal_degree
 
     def _pyproj_inv(self, other, ellipse="WGS84"):
-        '''
+        """
         Perform Pyproj's inv operation on two LatLon objects
         Returns the initial heading and reverse heading in degrees, and the distance
         in km.
-        '''
+        """
         lat1, lon1 = self.lat.decimal_degree, self.lon.decimal_degree
         lat2, lon2 = other.lat.decimal_degree, other.lon.decimal_degree
         g = pyproj.Geod(ellps=ellipse)
@@ -457,39 +459,40 @@ class LatLon:
         }
 
     def heading_initial(self, other, **kwargs):
-        '''
+        """
         Returns initial bearing between two LatLon objects in degrees using pyproj.
         Assumes the WGS84 ellipsoid by default. Choose ellipse = 'sphere'
         for the FAI ellipsoid.
-        '''
+        """
         return self._pyproj_inv(other, **kwargs)["heading_initial"]
 
     def heading_reverse(self, other, **kwargs):
-        '''
+        """
         Returns reverse bearing between two LatLon objects in degrees using pyproj.
         Assumes the WGS84 ellipsoid by default. Choose ellipse = 'sphere'
         for the FAI ellipsoid.
-        '''
+        """
         return self._pyproj_inv(other, **kwargs)["heading_reverse"]
 
     def distance(self, other, **kwargs):
-        '''
+        """
         Returns great circle distance between two LatLon objects in km using pyproj.
         Assumes the WGS84 ellipsoid by default. Choose ellipse = 'sphere'
         for the FAI ellipsoid.
-        '''
+        """
         return self._pyproj_inv(other, **kwargs)["distance"]
 
     def distance_sphere(self, other, radius=6371.0):
-        '''
+        """
         -- Deprecated in v0.70. Use distance(other, ellipse = 'sphere') instead --
 
         Returns great circle distance between two lat/lon coordinates on a sphere
         using the Haversine formula. The default radius corresponds to the FAI sphere
         with units in km.
-        '''
+        """
         warnings.warn(
-            "Deprecated in v0.70. Use distance(other, ellipse = 'sphere') instead",
+            "Deprecated in v0.70. Use distance(other, ellipse = 'sphere')"
+            "instead",
             DeprecationWarning,
         )
         lat1, lon1 = self.lat.decimal_degree, self.lon.decimal_degree
@@ -509,10 +512,10 @@ class LatLon:
         return arc*radius
 
     def offset(self, heading_initial, distance, ellipse="WGS84"):
-        '''
+        """
         Offset a LatLon object by a heading (in degrees) and distance (in km)
         to return a new LatLon object
-        '''
+        """
         lat1, lon1 = self.lat.decimal_degree, self.lon.decimal_degree
         g = pyproj.Geod(ellps=ellipse)
         # Convert km to meters
@@ -524,16 +527,16 @@ class LatLon:
         return LatLon(Latitude(lat2), Longitude(lon2))
 
     def to_string(self, formatter="D"):
-        '''
+        """
         Return string representation of lat and lon as a 2-element tuple
         using the format specified by formatter
-        '''
-        return (self.lat.to_string(formatter), self.lon.to_string(formatter))
+        """
+        return self.lat.to_string(formatter), self.lon.to_string(formatter)
 
     def _sub_vector(self, other):
-        '''
+        """
         Called when subtracting a GeoVector object from self
-        '''
+        """
         heading, distance = other()
         # Flip heading
         heading = (heading + 180) % 360
@@ -817,7 +820,6 @@ def demonstration():
 
     print(f"{lat_str}/{lon_str}")
 
-    sys.exit(0)
     test = LatLon(37.58509827, -79.05139923)
     print(test)
     print(test.to_string("D"))
@@ -825,9 +827,8 @@ def demonstration():
     # (returns ('5_52.998', '-162_4.998'))
     print(test.to_string("d%M%"))
 
-    sys.exit(0)
     # Returns '5.8833, -162.0833'
-    print(palmyra)
+    # print(palmyra)
 
     # or more complicated!
     palmyra = LatLon(
