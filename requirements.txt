@@ -1,4 +1,4 @@
 pbr
-aprsd>=2.4.0
+aprsd>=2.5.0
 requests
 pyproj
