@@ -4,6 +4,8 @@ CHANGES
 v1.0.11
 -------
 
+* Added Changelog
+* fix lint errors
 * update to min of 2.5.0
 * remove trace for new aprsd
 

@@ -1,6 +1,6 @@
 import logging
 
-from aprsd import plugin, trace
+from aprsd import plugin
 
 import aprsd_repeat_plugins
 
@@ -22,7 +22,6 @@ class VersionPlugin(plugin.APRSDRegexCommandPluginBase):
         # Do some checks here?
         self.enabled = True
 
-    @trace.trace
     def process(self, packet):
         """This is called when a received packet matches self.command_regex."""
 
