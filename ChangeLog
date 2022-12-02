@@ -1,0 +1,73 @@
+CHANGES
+=======
+
+v1.0.11
+-------
+
+* update to min of 2.5.0
+* remove trace for new aprsd
+
+v1.0.10
+-------
+
+* Added callsign in haminfo request
+
+v1.0.9
+------
+
+* fixed pep8
+
+v1.0.8
+------
+
+* fixed the latitude longitude decimal issues
+
+v1.0.7
+------
+
+* Fixed Nearest Object location format
+* Fixed the unit tests and flake8 failures
+
+v1.0.6
+------
+
+* Added fixes for object GPS
+
+v1.0.5
+------
+
+* Fixed broken requests
+
+v1.0.4
+------
+
+* Fixed zulu time
+* Fixed Tone and timestamp being wrong
+* Version plugin uses project tag version
+
+v1.0.2
+------
+
+* Use the pbr package version as plugin version
+* Refactor Tone creation
+* Limit the number of stations to 10
+* Updated the output for the object request
+
+v1.0.1
+------
+
+* Fixed fetch GPS data
+* Updated the format for lat/lon
+* Moved nearest plugin here
+* Updated version string
+* renamed plugin
+
+v1.0.0
+------
+
+* Added version for repeat service
+
+v0.1.0
+------
+
+* Initial commit
