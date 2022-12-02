@@ -2,7 +2,7 @@ import datetime
 import logging
 
 import requests
-from aprsd import messaging, plugin, plugin_utils, trace
+from aprsd import messaging, plugin, plugin_utils
 
 import aprsd_repeat_plugins
 
@@ -170,7 +170,6 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             offset = f"+{offset:.2f}"
         return "{}".format(offset.replace(".", ""))
 
-    @trace.trace
     def fetch_data(self, packet):
         fromcall = packet.get("from")
         message = packet.get("message_text", None)
@@ -276,7 +275,6 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
 
         return data
 
-    @trace.trace
     def process(self, packet):
         LOG.info("Nearest Plugin")
 
@@ -376,7 +374,6 @@ class NearestObjectPlugin(NearestPlugin):
 
         return {"degrees": degrees, "minutes": minutes, "seconds": seconds}
 
-    @trace.trace
     def decdeg2dmm_m(self, degrees_decimal):
         is_positive = degrees_decimal >= 0
         degrees_decimal = abs(degrees_decimal)
@@ -437,14 +434,12 @@ class NearestObjectPlugin(NearestPlugin):
         lon = f"{degrees}{str(minutes)}.{hundredths}{direction}"
         return lon
 
-    @trace.trace
     def _get_latlon(self, latitude_str, longitude_str):
         return "{}/{}".format(
                 self.convert_latitude(float(latitude_str)),
                 self.convert_longitude(float(longitude_str)),
         )
 
-    @trace.trace
     def process(self, packet):
         LOG.info("Nearest Object Plugin")
         stations = self.fetch_data(packet)
