@@ -171,9 +171,8 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
         return "{}".format(offset.replace(".", ""))
 
     def fetch_data(self, packet):
-        fromcall = packet.get("from")
-        message = packet.get("message_text", None)
-        # ack = packet.get("msgNo", "0")
+        fromcall = packet.from_call
+        message = packet.message_text
 
         # get last location of a callsign, get descriptive name from weather service
         try:
@@ -465,7 +464,6 @@ class NearestObjectPlugin(NearestPlugin):
             # reply=";{:.3f}VAA*111111z{}rT{} {}".format(
             #        freq, latlon, uplink_tone, offset,
             # )
-            packet["from"]
             fromcall = self.config["aprs"]["login"]
 
             local_datetime = datetime.datetime.now()
