@@ -1,12 +1,15 @@
-import datetime
 import logging
 
 import requests
-from aprsd import messaging, plugin, plugin_utils
+from aprsd import conf  # noqa
+from aprsd import packets, plugin, plugin_utils
+from oslo_config import cfg
 
 import aprsd_repeat_plugins
+from aprsd_repeat_plugins import conf  # noqa
 
 
+CONF = cfg.CONF
 LOG = logging.getLogger("APRSD")
 
 API_KEY_HEADER = "X-Api-Key"
@@ -106,7 +109,10 @@ class NoAPRSFILocationException(Exception):
     message = "Unable to find location from aprs.fi"
 
 
-class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
+class NearestPlugin(
+    plugin.APRSDRegexCommandPluginBase,
+    plugin.APRSFIKEYMixin,
+):
     """Nearest!
 
     Syntax of request
@@ -121,7 +127,7 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
     """
 
     version = aprsd_repeat_plugins.__version__
-    command_regex = "^[nN]"
+    command_regex = r"^([n]|[n]\s|nearest)"
     command_name = "nearest"
 
     def help(self):
@@ -170,18 +176,23 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
             offset = f"+{offset:.2f}"
         return "{}".format(offset.replace(".", ""))
 
+    def setup(self):
+        self.ensure_aprs_fi_key()
+        if not CONF.aprsd_repeat_plugins.haminfo_apiKey:
+            LOG.error("Missing aprsd_repeat_plugins.haminfo_apiKey")
+            self.enabled = False
+
+        if not CONF.aprsd_repeat_plugins.haminfo_base_url:
+            LOG.error("Missing aprsd_repeat_plugins.haminfo_base_url")
+            self.enabled = False
+
+
     def fetch_data(self, packet):
         fromcall = packet.from_call
         message = packet.message_text
 
         # get last location of a callsign, get descriptive name from weather service
-        try:
-            self.config.exists(["services", "aprs.fi", "apiKey"])
-        except Exception as ex:
-            LOG.error(f"Failed to find config aprs.fi:apikey {ex}")
-            raise NoAPRSFIApiKeyException()
-
-        api_key = self.config["services"]["aprs.fi"]["apiKey"]
+        api_key = CONF.aprs_fi.apiKey
 
         try:
             aprs_data = plugin_utils.get_aprs_fi(api_key, fromcall)
@@ -254,9 +265,9 @@ class NearestPlugin(plugin.APRSDRegexCommandPluginBase):
 
         try:
             url = "{}/nearest".format(
-                self.config["services"]["haminfo"]["base_url"],
+                CONF.aprsd_repeat_plugins.haminfo_base_url,
             )
-            api_key = self.config["services"]["haminfo"]["apiKey"]
+            api_key = CONF.aprsd_repeat_plugins.haminfo_apiKey
             params = {
                 "lat": lat, "lon": lon, "count": count, "band": band,
                 "callsign": fromcall,
@@ -345,7 +356,7 @@ class NearestObjectPlugin(NearestPlugin):
     """
 
     version = aprsd_repeat_plugins.__version__
-    command_regex = "^[oO]"
+    command_regex = r"^([o]|[o]\s|object)"
     command_name = "object"
 
     def help(self):
@@ -451,31 +462,38 @@ class NearestObjectPlugin(NearestPlugin):
         for data in stations:
             callsign = data["callsign"]
 
-            latlon = self._get_latlon(data["lat"], data["long"])
+            # latlon = self._get_latlon(data["lat"], data["long"])
 
             uplink_tone = self._tone(data["uplink_offset"])
             offset = self._offset(data["offset"])
 
-            distance = float(data["distance"])
-            distance = f"{distance / 1609:.1f}"
+            # distance = float(data["distance"])
+            # distance = f"{distance / 1609:.1f}"
             freq = float(data["frequency"])
 
             # reply = ";{:.3f}-VA*111111z{}r{:.3f}MHz T{} {}".format(
             # reply=";{:.3f}VAA*111111z{}rT{} {}".format(
             #        freq, latlon, uplink_tone, offset,
             # )
-            fromcall = self.config["aprs"]["login"]
+            fromcall = CONF.callsign
 
-            local_datetime = datetime.datetime.now()
-            UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - local_datetime
-            result_utc_datetime = local_datetime + UTC_OFFSET_TIMEDELTA
-            time_zulu = result_utc_datetime.strftime("%d%H%M")
+            # local_datetime = datetime.datetime.now()
+            # UTC_OFFSET_TIMEDELTA = datetime.datetime.utcnow() - local_datetime
+            # result_utc_datetime = local_datetime + UTC_OFFSET_TIMEDELTA
+            # time_zulu = result_utc_datetime.strftime("%d%H%M")
 
-            reply = "{}>APZ100:;{:9s}*{}z{}r{:.3f}MHz {} {}".format(
-                fromcall, callsign, time_zulu, latlon, freq, uplink_tone, offset,
+            # reply = "{}>APZ100:;{:9s}*{}z{}r{:.3f}MHz {} {}".format(
+            #     fromcall, callsign, time_zulu, latlon, freq, uplink_tone, offset,
+            # )
+            comment = f"{freq:.3f}Mhz {uplink_tone} {offset}"
+            pkt = packets.core.ObjectPacket(
+                from_call=fromcall,
+                to_call=callsign,
+                latitude=data["lat"],
+                longitude=data["long"],
+                comment=comment,
             )
-            msg = messaging.RawMessage(reply)
-            msg.retry_count = 1
-            replies.append(msg)
+            pkt.retry_count = 1
+            replies.append(pkt)
 
         return replies
