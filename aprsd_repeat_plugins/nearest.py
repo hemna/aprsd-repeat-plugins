@@ -186,7 +186,6 @@ class NearestPlugin(
             LOG.error("Missing aprsd_repeat_plugins.haminfo_base_url")
             self.enabled = False
 
-
     def fetch_data(self, packet):
         fromcall = packet.from_call
         message = packet.message_text

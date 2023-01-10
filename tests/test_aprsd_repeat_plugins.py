@@ -4,17 +4,19 @@
 
 import unittest
 
-from aprsd import config as aprsd_config
+from aprsd import conf  # noqa
 
+from aprsd_repeat_plugins import conf  # noqa
 from aprsd_repeat_plugins import nearest
 
 
 class TestNearestObject(unittest.TestCase):
     def setUp(self) -> None:
-        self.config = aprsd_config.DEFAULT_CONFIG_DICT
+        # self.config = aprsd_config.DEFAULT_CONFIG_DICT
+        pass
 
     def _nearestObject(self):
-        return nearest.NearestObjectPlugin(config=self.config)
+        return nearest.NearestObjectPlugin()
 
     def test_nearest_object_latlon_US_Virginia(self):
         no = self._nearestObject()
