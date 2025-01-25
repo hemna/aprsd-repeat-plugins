@@ -22,7 +22,6 @@ bitarray==3.0.0
 certifi==2024.12.14
     # via
     #   aprsd
-    #   pyproj
     #   requests
 charset-normalizer==3.4.1
     # via
@@ -90,8 +89,6 @@ pygments==2.19.1
     # via
     #   aprsd
     #   rich
-pyproj==3.7.0
-    # via -r requirements.in
 pyserial==3.5
     # via
     #   aprsd
