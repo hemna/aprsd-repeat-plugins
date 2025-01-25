@@ -1,4 +1,6 @@
-import pbr.version
+from importlib.metadata import PackageNotFoundError, version
 
-
-__version__ = pbr.version.VersionInfo("aprsd_repeat_plugins").version_string()
+try:
+    __version__ = version('aprsd-repeat-plugins')
+except PackageNotFoundError:
+    pass
