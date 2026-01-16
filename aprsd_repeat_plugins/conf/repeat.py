@@ -1,25 +1,22 @@
 from oslo_config import cfg
 
-
 repeat_group = cfg.OptGroup(
-    name="aprsd_repeat_plugins",
-    title="APRSD REPEAT Plugin settings",
+    name='aprsd_repeat_plugins',
+    title='APRSD REPEAT Plugin settings',
 )
 
 repeat_opts = [
     cfg.StrOpt(
-        "haminfo_apiKey",
-        help="Haminfo API key",
+        'haminfo_apiKey',
+        help='Haminfo API key',
     ),
     cfg.StrOpt(
-        "haminfo_base_url",
-        help="The base url to the haminfo REST API",
+        'haminfo_base_url',
+        help='The base url to the haminfo REST API',
     ),
 ]
 
-ALL_OPTS = (
-    repeat_opts
-)
+ALL_OPTS = repeat_opts
 
 
 def register_opts(cfg):

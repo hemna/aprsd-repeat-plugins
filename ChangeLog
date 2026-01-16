@@ -1,6 +1,18 @@
 CHANGES
 =======
 
+* remove pyproj
+* migrate to pyproject.toml
+
+v1.2.0
+------
+
+* remove py38 testing
+* aprsd 3.0.0 fixes
+* force requirement to aprsd 3.0.0
+* for now don't force a specific version
+* Update for aprsd 3.0.0
+
 v1.1.0
 ------
 

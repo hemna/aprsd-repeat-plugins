@@ -18,9 +18,9 @@ description = "APRSd plugins for the REPEAT service"
 # 'Programming Language' classifiers in this file, 'pip install' will check this
 # and refuse to install the project if the version does not match. See
 # https://packaging.python.org/guides/distributing-packages-using-setuptools/#python-requires
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
-dynamic = ["version", "dependencies", "optional-dependencies"]
+dynamic = ["version"]
 
 # This is an optional longer description of your project that represents
 # the body of text which users will see when they visit PyPI.
@@ -94,9 +94,11 @@ classifiers = [
 #
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
-[tool.setuptools.dynamic]
-dependencies = {file = ["./requirements.txt"]}
-optional-dependencies.dev = {file = ["./requirements-dev.txt"]}
+dependencies = [
+    "aprsd>=3.0.0",
+    "requests",
+    "oslo.config",
+]
 
 # List additional groups of dependencies here (e.g. development
 # dependencies). Users will be able to install these using the "extras"
@@ -107,7 +109,20 @@ optional-dependencies.dev = {file = ["./requirements-dev.txt"]}
 # Optional dependencies the project provides. These are commonly
 # referred to as "extras". For a more extensive definition see:
 # https://packaging.python.org/en/latest/specifications/dependency-specifiers/#extras
-# [project.optional-dependencies]
+[project.optional-dependencies]
+dev = [
+    "pip",
+    "pip-tools",
+    "bump2version",
+    "wheel",
+    "watchdog",
+    "tox",
+    "coverage",
+    "Sphinx",
+    "twine",
+    "pytest==6.2.5",
+    "ruff",
+]
 
 # List URLs that are relevant to your project
 #
@@ -168,15 +183,30 @@ branch = true
 
 [tool.ruff]
 line-length = 88
+target-version = "py310"
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    ".eggs",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
 select = [
     "F",  # pyflakes rules
     "E",  # pycodestyle error rules
     "W",  # pycodestyle warning rules
     "B",  # flake8-bugbear rules
-  #    "I",  # isort rules
+    "I",  # isort rules
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line-too-long
+    "E501",  # line-too-long (handled by formatter)
 ]
 
 [tool.ruff.format]
