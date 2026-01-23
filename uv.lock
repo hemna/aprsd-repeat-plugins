@@ -108,7 +108,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aprsd", specifier = ">=3.0.0" },
+    { name = "aprsd", specifier = ">=4.0.0" },
     { name = "bump2version", marker = "extra == 'dev'" },
     { name = "coverage", marker = "extra == 'dev'" },
     { name = "flake8", marker = "extra == 'dev'" },
