@@ -1,6 +1,10 @@
 CHANGES
 =======
 
+1.3.0
+-----
+
+* config export pattern added
 * updated tox.ini
 * remove pyproj
 * migrate to pyproject.toml

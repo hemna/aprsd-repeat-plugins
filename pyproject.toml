@@ -97,7 +97,7 @@ classifiers = [
 dependencies = [
     "aprsd>=3.0.0",
     "requests",
-    "oslo.config",
+    "oslo-config",
 ]
 
 # List additional groups of dependencies here (e.g. development
@@ -116,12 +116,13 @@ dev = [
     "bump2version",
     "wheel",
     "watchdog",
+    "flake8",
     "tox",
     "coverage",
     "Sphinx",
     "twine",
     "pytest==6.2.5",
-    "ruff",
+    "gray",
 ]
 
 # List URLs that are relevant to your project
