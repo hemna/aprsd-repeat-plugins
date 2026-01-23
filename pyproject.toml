@@ -143,6 +143,7 @@ dev = [
 # which executes the function `main` from this package when invoked.
 [project.scripts]
 aprsd = "aprsd.main:main"
+aprsd-repeat-plugins-export-config = "aprsd_repeat_plugins.cli:main"
 
 [project.entry-points."oslo.config.opts"]
     "aprsd_repeat_plugins.conf" = "aprsd_repeat_plugins.conf.opts:list_opts"

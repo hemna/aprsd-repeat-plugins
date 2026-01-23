@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* updated tox.ini
 * remove pyproj
 * migrate to pyproject.toml
 
