@@ -118,15 +118,12 @@ class NearestPlugin(
 ):
     """Nearest!
 
-    Syntax of request
+    Syntax of request::
 
-    n[earest] [count] [band]
+        n[earest] [count] [band]
 
     count - the number of stations to return
-    band  - the frequency band to look for
-            Defaults to 2m
-
-
+    band  - the frequency band to look for (defaults to 2m)
     """
 
     version = aprsd_repeat_plugins.__version__

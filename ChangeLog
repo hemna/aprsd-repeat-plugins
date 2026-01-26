@@ -4,6 +4,7 @@ CHANGES
 1.3.0
 -----
 
+* fix tox
 * small updates to pyproject
 * migrate requirements into pyproject
 * config export pattern added

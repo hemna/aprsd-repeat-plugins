@@ -1,12 +1,14 @@
-"""
-Methods for representing geographic coordinates (latitude and longitude)
+"""Methods for representing geographic coordinates (latitude and longitude).
+
 Features:
-    Convert lat/lon strings from any format into a LatLon object
-    Automatically store decimal degrees, decimal minutes, and degree, minute, second
-      information in a LatLon object
-    Output lat/lon information into a formatted string
-    Project lat/lon coordinates into some other proj projection
-    Calculate distances between lat/lon pairs using either the FAI or WGS84 approximation
+    - Convert lat/lon strings from any format into a LatLon object
+    - Automatically store decimal degrees, decimal minutes, and degree, minute,
+      second information in a LatLon object
+    - Output lat/lon information into a formatted string
+    - Project lat/lon coordinates into some other proj projection
+    - Calculate distances between lat/lon pairs using either the FAI or
+      WGS84 approximation
+
 Written July 22, 2014
 Author: Gen Del Raye
 """
@@ -120,19 +122,21 @@ class GeoCoord:
         """
 
     def to_string(self, format_str):
-        """
-        Output lat, lon coordinates as string in chosen format
-        Inputs:
-            format (str) - A string of the form A%B%C where A, B and C are identifiers.
-              Unknown identifiers (e.g. ' ', ', ' or '_' will be inserted as separators
-              in a position corresponding to the position in format.
+        """Output lat, lon coordinates as string in chosen format.
+
+        Args:
+            format_str (str): A string of the form A%B%C where A, B and C are
+                identifiers. Unknown identifiers (e.g. ' ', ', ' or '_' will
+                be inserted as separators in a position corresponding to the
+                position in format.
+
         Examples:
-            >> palmyra = LatLon(5.8833, -162.0833)
-            >> palmyra.to_string('D') # Degree decimal output
+            >>> palmyra = LatLon(5.8833, -162.0833)
+            >>> palmyra.to_string('D')  # Degree decimal output
             ('5.8833', '-162.0833')
-            >> palmyra.to_string('H% %D')
+            >>> palmyra.to_string('H% %D')
             ('N 5.8833', 'W 162.0833')
-            >> palmyra.to_string('d%_%M')
+            >>> palmyra.to_string('d%_%M')
             ('5_52.998', '-162_4.998')
         """
         format2value = {
@@ -319,32 +323,34 @@ class Longitude(GeoCoord):
 
 
 def string2geocoord(coord_str, coord_class, format_str='D'):
-    """
-    Create a GeoCoord object (e.g. Latitude or Longitude) from a string.
-    Inputs:
-        coord_str (str) - a string representation of a geographic coordinate
-         (e.g. '5.083 N'). Each
-          section of the string must be separated by some kind of a separator
-           character ('5.083N' is invalid).
-        coord_class (class) - a class inheriting from GeoCoord that includes a
-         set_hemisphere method.
-          Can be either Latitude or Longitude
-        format_str (str) - a string representation of the sections of coord_str.
-        Possible letter values correspond to the keys of the dictionary
-        format2value, where
-              'H' is a hemisphere identifier (e.g. N, S, E or W)
-              'D' is a coordinate in decimal degrees notation
-              'd' is a coordinate in degrees notation
-              'M' is a coordinate in decimal minutes notaion
-              'm' is a coordinate in minutes notation
-              'S' is a coordinate in seconds notation
-              Any other characters (e.g. ' ' or ', ') will be treated as
+    """Create a GeoCoord object (e.g. Latitude or Longitude) from a string.
+
+    Args:
+        coord_str (str): A string representation of a geographic coordinate
+            (e.g. '5.083 N'). Each section of the string must be separated by
+            some kind of a separator character ('5.083N' is invalid).
+        coord_class (class): A class inheriting from GeoCoord that includes a
+            set_hemisphere method. Can be either Latitude or Longitude.
+        format_str (str): A string representation of the sections of coord_str.
+            Possible letter values correspond to the keys of the dictionary
+            format2value, where:
+
+            - 'H' is a hemisphere identifier (e.g. N, S, E or W)
+            - 'D' is a coordinate in decimal degrees notation
+            - 'd' is a coordinate in degrees notation
+            - 'M' is a coordinate in decimal minutes notation
+            - 'm' is a coordinate in minutes notation
+            - 'S' is a coordinate in seconds notation
+            - Any other characters (e.g. ' ' or ', ') will be treated as
               a separator between the above components.
-          All components should be separated by the '%' character.
-           For example, if the coord_str is
-          '5, 52, 59.88_N', the format_str would be 'd%, %m%, %S%_%H'
+
+            All components should be separated by the '%' character.
+            For example, if the coord_str is '5, 52, 59.88_N', the format_str
+            would be 'd%, %m%, %S%_%H'.
+
     Returns:
-        GeoCoord object initialized with the coordinate information from coord_str
+        GeoCoord: A GeoCoord object initialized with the coordinate information
+            from coord_str
     """
     new_coord = coord_class()
     # Dictionary of functions for setting variables in the coordinate class:
@@ -634,16 +640,16 @@ class LatLon:
 
 
 def string2latlon(lat_str, lon_str, format_str):
-    """
-    Create a LatLon object from a pair of strings.
-    Inputs:
-        lat_str (str) - string representation of latitude (e.g. '5 52 59.88 N')
-        lon_str (str) - string representation of longitude (e.g. '162 4 59.88 W')
-        format_str (str) - format in which the coordinate strings are given (e.g.
-          for the above examples this would be 'd% %m% %S% %H'). See function
-          string2geocoord for a detailed explanation on how to specify formats.
+    """Create a LatLon object from a pair of strings.
+
+    Args:
+        lat_str: String representation of latitude (e.g. '5 52 59.88 N')
+        lon_str: String representation of longitude (e.g. '162 4 59.88 W')
+        format_str: Format string for coordinates (e.g. 'd% %m% %S% %H'). See string2geocoord for format details.
+
     Returns:
-        A LatLon object initialized with coordinate data from lat_str and lon_str
+        LatLon: A LatLon object initialized with coordinate data from
+            lat_str and lon_str
     """
     lat = string2geocoord(lat_str, Latitude, format_str)
     lon = string2geocoord(lon_str, Longitude, format_str)
@@ -652,8 +658,8 @@ def string2latlon(lat_str, lon_str, format_str):
 
 
 class GeoVector:
-    """
-    Object representing the distance and heading between two lat/lon coordinates
+    """Object representing the distance and heading between two lat/lon coordinates.
+
     Can be created by:
         1. Passing dx and dy arguments
         2. Passing initial_heading and distance keyword arguments

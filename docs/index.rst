@@ -10,6 +10,7 @@ Welcome to APRSD Nearest station plugin's documentation!
    contributing
    authors
    history
+   apidoc/modules
 
 Indices and tables
 ==================
