@@ -95,7 +95,6 @@ classifiers = [
 # For an analysis of this field vs pip's requirements files see:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/
 dependencies = [
-    "aprsd>=4.0.0",
     "requests",
     "oslo-config",
     "pyproj",
@@ -150,9 +149,6 @@ aprsd-repeat-plugins-export-config = "aprsd_repeat_plugins.cli:main"
 [project.entry-points."oslo.config.opts"]
     "aprsd_repeat_plugins.conf" = "aprsd_repeat_plugins.conf.opts:list_opts"
 
-[project.entry-points."oslo.config.opts.defaults"]
-    "aprsd_repeat_plugins.conf" = "aprsd_repeat_plugins.conf:set_lib_defaults"
-
 # If you are using a different build backend, you will need to change this.
 [tool.setuptools]
 # If there are data files included in your packages that need to be
@@ -163,7 +159,7 @@ packages = ["aprsd_repeat_plugins"]
 
 [build-system]
 requires = [
-    "setuptools>=69.5.0",
+    "setuptools>=80.0.0",
     "setuptools_scm>=0",
     "wheel",
 ]
