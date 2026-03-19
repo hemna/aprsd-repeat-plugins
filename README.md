@@ -122,38 +122,53 @@ n[earest] [count] [band] [+filter]
 **Basic usage - find nearest repeater:**
 ```
 You: n
-APRSD: W6ABC 146.520+ T88.5 2.3mi NE
+APRSD: W6ABC 146.940 -.6 T88.5 2.3mi NE
 ```
 
 **Find 3 nearest repeaters:**
 ```
 You: n 3
-APRSD: W6ABC 146.520+ T88.5 2.3mi NE
-      W6XYZ 147.330+ T100.0 5.1mi SW
-      W6DEF 145.230- T103.5 8.7mi N
+APRSD: W6ABC 146.940 -.6 T88.5 2.3mi NE
+      W6XYZ 147.330 +.6 T100.0 5.1mi SW
+      W6DEF 145.230 -.6 T103.5 8.7mi N
 ```
 
 **Find nearest 70cm repeater:**
 ```
 You: n 70cm
-APRSD: W6ABC 446.000+ T88.5 1.2mi SE
+APRSD: W6ABC 446.000 -5 T88.5 1.2mi SE
 ```
 
 **Find nearest EchoLink-enabled repeater:**
 ```
 You: n +echo
-APRSD: W6ABC 146.520+ T88.5 3.4mi NE
+APRSD: W6ABC 146.940 -.6 T88.5 3.4mi NE
 ```
 
 **Find 5 nearest 2m DMR repeaters:**
 ```
 You: n 5 2m +dmr
-APRSD: W6ABC 146.520+ T88.5 2.3mi NE
-      W6XYZ 147.330+ T100.0 5.1mi SW
-      W6DEF 145.230- T103.5 8.7mi N
-      W6GHI 147.450+ T103.5 12.4mi E
-      W6JKL 146.640- T88.5 15.8mi W
+APRSD: W6ABC 146.940 -.6 T88.5 2.3mi NE
+      W6XYZ 147.330 +.6 T100.0 5.1mi SW
+      W6DEF 145.230 -.6 T103.5 8.7mi N
+      W6GHI 147.450 +.6 T103.5 12.4mi E
+      W6JKL 146.640 -.6 T88.5 15.8mi W
 ```
+
+#### Offset Examples
+
+The offset field shows the actual frequency offset in MHz, which is especially useful for
+non-standard repeater configurations:
+
+| Band | Offset | Description |
+|------|--------|-------------|
+| 2m | `-.6` | Standard negative 600 kHz offset |
+| 2m | `+.6` | Standard positive 600 kHz offset |
+| 2m | `-2.5` | Non-standard 2.5 MHz offset (some regions) |
+| 70cm | `-5` | Standard negative 5 MHz offset |
+| 70cm | `+5` | Standard positive 5 MHz offset |
+| 70cm | `-7.6` | Non-standard 7.6 MHz offset (common in some areas) |
+| Any | `0` | Simplex (no offset) |
 
 #### Supported Frequency Bands
 
@@ -241,22 +256,28 @@ APRSD: APRS REPEAT Version: 1.0.0
 The `NearestPlugin` returns responses in the following format:
 
 ```
-<CALLSIGN> <FREQUENCY><OFFSET> <TONE> <DISTANCE><UNITS> <DIRECTION>
+<CALLSIGN> <FREQUENCY> <OFFSET> <TONE> <DISTANCE><UNITS> <DIRECTION>
 ```
 
 Where:
 - `CALLSIGN`: Repeater callsign
-- `FREQUENCY`: Repeater frequency (e.g., `146.520`)
-- `OFFSET`: Offset direction (`+` for positive, `-` for negative)
-- `TONE`: CTCSS tone (e.g., `T88.5`)
+- `FREQUENCY`: Repeater output frequency in MHz (e.g., `146.940`)
+- `OFFSET`: Offset in MHz with sign (e.g., `-.6`, `+5`, `-7.6`, `0` for simplex)
+- `TONE`: CTCSS/PL tone required for access (e.g., `T88.5`, `Toff` if none)
 - `DISTANCE`: Distance in miles (US/UK) or kilometers (elsewhere)
 - `UNITS`: Distance units (`mi` or `km`)
-- `DIRECTION`: Compass direction (N, NE, E, SE, S, SW, W, NW)
+- `DIRECTION`: Compass direction from your location (N, NE, E, SE, S, SW, W, NW)
 
 Example:
 ```
-W6ABC 146.520+ T88.5 2.3mi NE
+W6ABC 146.940 -.6 T88.5 2.3mi NE
 ```
+
+**Why show the actual offset?** While many repeaters use standard offsets (±600 kHz for 2m,
+±5 MHz for 70cm), a significant number use non-standard offsets. For example, approximately
+28% of 70cm repeaters in the database use offsets other than ±5 MHz (such as -7.6 MHz or
+-9 MHz). Showing the actual offset ensures you can correctly program your radio regardless
+of local frequency coordination practices.
 
 ## Troubleshooting
 

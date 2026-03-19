@@ -176,6 +176,40 @@ class NearestPlugin(
             offset = f'+{offset:.2f}'
         return '{}'.format(offset.replace('.', ''))
 
+    def _format_offset_mhz(self, offset):
+        """Format offset in MHz with sign, removing trailing zeros.
+
+        Args:
+            offset: Offset value (float, int, string, or None)
+
+        Returns:
+            Formatted offset string (e.g., '-.6', '+5', '-7.6', '0')
+            Returns empty string if offset is None or invalid.
+
+        Examples:
+            0 -> '0'
+            -0.6 -> '-.6'
+            +0.6 -> '+.6'
+            -5.0 -> '-5'
+            +5.0 -> '+5'
+            -7.6 -> '-7.6'
+            None -> ''
+            'invalid' -> ''
+        """
+        if offset is None:
+            return ''
+        try:
+            offset = float(offset)
+        except (ValueError, TypeError):
+            return ''
+        if offset == 0:
+            return '0'
+        # Format with up to 1 decimal place, strip unnecessary zeros
+        formatted = f'{offset:+.1f}'.rstrip('0').rstrip('.')
+        # Remove leading zero before decimal (e.g., +0.6 -> +.6)
+        formatted = formatted.replace('+0.', '+.').replace('-0.', '-.')
+        return formatted
+
     def setup(self):
         self.ensure_aprs_fi_key()
         if not CONF.aprsd_repeat_plugins.haminfo_apiKey:
@@ -303,12 +337,8 @@ class NearestPlugin(
             for entry in data:
                 LOG.info(f'Using {entry}')
 
-                if 'offset' not in entry:
-                    offset_direction = ''
-                elif self.isfloat(entry['offset']) and float(entry['offset']) > 0:
-                    offset_direction = '+'
-                else:
-                    offset_direction = '-'
+                # Format offset - handles None, missing keys, and invalid values
+                offset_str = self._format_offset_mhz(entry.get('offset'))
 
                 # US and UK are in miles, everywhere else is metric?
                 # by default units are meters
@@ -329,10 +359,15 @@ class NearestPlugin(
 
                 uplink_offset = self._tone(entry['uplink_offset'], human=True)
 
-                reply = '{} {}{} {} {}{} {}'.format(
+                # Build reply, avoiding double spaces if offset is empty
+                freq_offset = (
+                    f'{entry["frequency"]} {offset_str}'
+                    if offset_str
+                    else str(entry['frequency'])
+                )
+                reply = '{} {} {} {}{} {}'.format(
                     entry['callsign'],
-                    entry['frequency'],
-                    offset_direction,
+                    freq_offset,
                     uplink_offset,
                     distance,
                     units,
