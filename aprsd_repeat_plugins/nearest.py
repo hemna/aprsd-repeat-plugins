@@ -179,6 +179,13 @@ class NearestPlugin(
     def _format_offset_mhz(self, offset):
         """Format offset in MHz with sign, removing trailing zeros.
 
+        Args:
+            offset: Offset value (float, int, string, or None)
+
+        Returns:
+            Formatted offset string (e.g., '-.6', '+5', '-7.6', '0')
+            Returns empty string if offset is None or invalid.
+
         Examples:
             0 -> '0'
             -0.6 -> '-.6'
@@ -186,8 +193,15 @@ class NearestPlugin(
             -5.0 -> '-5'
             +5.0 -> '+5'
             -7.6 -> '-7.6'
+            None -> ''
+            'invalid' -> ''
         """
-        offset = float(offset)
+        if offset is None:
+            return ''
+        try:
+            offset = float(offset)
+        except (ValueError, TypeError):
+            return ''
         if offset == 0:
             return '0'
         # Format with up to 1 decimal place, strip unnecessary zeros
@@ -323,10 +337,8 @@ class NearestPlugin(
             for entry in data:
                 LOG.info(f'Using {entry}')
 
-                if 'offset' not in entry:
-                    offset_str = ''
-                else:
-                    offset_str = self._format_offset_mhz(entry['offset'])
+                # Format offset - handles None, missing keys, and invalid values
+                offset_str = self._format_offset_mhz(entry.get('offset'))
 
                 # US and UK are in miles, everywhere else is metric?
                 # by default units are meters
@@ -347,10 +359,15 @@ class NearestPlugin(
 
                 uplink_offset = self._tone(entry['uplink_offset'], human=True)
 
-                reply = '{} {} {} {} {}{} {}'.format(
+                # Build reply, avoiding double spaces if offset is empty
+                freq_offset = (
+                    f'{entry["frequency"]} {offset_str}'
+                    if offset_str
+                    else str(entry['frequency'])
+                )
+                reply = '{} {} {} {}{} {}'.format(
                     entry['callsign'],
-                    entry['frequency'],
-                    offset_str,
+                    freq_offset,
                     uplink_offset,
                     distance,
                     units,
