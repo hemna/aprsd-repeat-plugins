@@ -91,34 +91,74 @@ class TestRepeatHelpPluginParsing(unittest.TestCase):
         self.plugin = RepeatHelpPlugin()
 
     def test_parse_help_alone(self):
-        cmd, plugin_name, is_full = self.plugin._parse_help_message('help')
-        self.assertEqual(cmd, 'help')
+        plugin_name, is_full = self.plugin._parse_help_message('help')
         self.assertIsNone(plugin_name)
         self.assertFalse(is_full)
 
     def test_parse_help_plugin(self):
-        cmd, plugin_name, is_full = self.plugin._parse_help_message('help nearest')
-        self.assertEqual(cmd, 'help')
+        plugin_name, is_full = self.plugin._parse_help_message('help nearest')
         self.assertEqual(plugin_name, 'nearest')
         self.assertFalse(is_full)
 
     def test_parse_help_plugin_full(self):
-        cmd, plugin_name, is_full = self.plugin._parse_help_message('help nearest full')
-        self.assertEqual(cmd, 'help')
+        plugin_name, is_full = self.plugin._parse_help_message('help nearest full')
         self.assertEqual(plugin_name, 'nearest')
         self.assertTrue(is_full)
 
     def test_parse_h_shorthand(self):
-        cmd, plugin_name, is_full = self.plugin._parse_help_message('h')
-        self.assertEqual(cmd, 'h')
+        plugin_name, is_full = self.plugin._parse_help_message('h')
         self.assertIsNone(plugin_name)
         self.assertFalse(is_full)
 
     def test_parse_h_plugin(self):
-        cmd, plugin_name, is_full = self.plugin._parse_help_message('h nearest')
-        self.assertEqual(cmd, 'h')
+        plugin_name, is_full = self.plugin._parse_help_message('h nearest')
         self.assertEqual(plugin_name, 'nearest')
         self.assertFalse(is_full)
+
+    # Issue 4: Tests for case variants, spaces, and extra tokens
+    def test_parse_uppercase_help(self):
+        """Test that 'HELP nearest full' parses correctly."""
+        plugin_name, is_full = self.plugin._parse_help_message('HELP nearest full')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertTrue(is_full)
+
+    def test_parse_mixed_case_help(self):
+        """Test that 'Help Nearest Full' parses correctly."""
+        plugin_name, is_full = self.plugin._parse_help_message('Help Nearest Full')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertTrue(is_full)
+
+    def test_parse_uppercase_full_flag(self):
+        """Test that 'help nearest FULL' parses correctly."""
+        plugin_name, is_full = self.plugin._parse_help_message('help nearest FULL')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertTrue(is_full)
+
+    def test_parse_leading_spaces(self):
+        """Test that leading spaces are handled."""
+        plugin_name, is_full = self.plugin._parse_help_message('  help nearest')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertFalse(is_full)
+
+    def test_parse_trailing_spaces(self):
+        """Test that trailing spaces are handled."""
+        plugin_name, is_full = self.plugin._parse_help_message('help nearest  ')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertFalse(is_full)
+
+    def test_parse_multiple_internal_spaces(self):
+        """Test that multiple internal spaces are handled."""
+        plugin_name, is_full = self.plugin._parse_help_message('help   nearest   full')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertTrue(is_full)
+
+    def test_parse_extra_tokens_after_full(self):
+        """Test that extra tokens after 'full' are ignored."""
+        plugin_name, is_full = self.plugin._parse_help_message(
+            'help nearest full extra stuff'
+        )
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertTrue(is_full)
 
 
 class TestRepeatHelpPluginProcess(unittest.TestCase):
@@ -205,6 +245,102 @@ class TestRepeatHelpPluginProcess(unittest.TestCase):
             result = self.plugin.process(packet)
 
         self.assertEqual(result, 'No plugins available')
+
+    def test_process_unknown_plugin_no_plugins_returns_clean_error(self):
+        """Test that 'help unknown' with no plugins doesn't show 'Available: '."""
+        packet = MagicMock()
+        packet.message_text = 'help unknown'
+
+        with patch.object(self.plugin, '_get_repeat_plugins', return_value={}):
+            result = self.plugin.process(packet)
+
+        self.assertIn("Unknown plugin 'unknown'", result)
+        self.assertIn('No plugins available', result)
+        self.assertNotIn('Available: ', result)
+
+    # Issue 5: Tests for h/H shorthand and case-insensitive full in process()
+    def test_process_h_shorthand_lists_plugins(self):
+        """Test that 'h' shorthand lists available plugins."""
+        packet = MagicMock()
+        packet.message_text = 'h'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        self.assertIsInstance(result, list)
+        self.assertIn('plugins:', result[1])
+
+    def test_process_H_shorthand_lists_plugins(self):
+        """Test that 'H' shorthand lists available plugins."""
+        packet = MagicMock()
+        packet.message_text = 'H'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        self.assertIsInstance(result, list)
+        self.assertIn('plugins:', result[1])
+
+    def test_process_h_shorthand_with_plugin_returns_basic_help(self):
+        """Test that 'h nearest' returns basic help."""
+        packet = MagicMock()
+        packet.message_text = 'h nearest'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+        mock_nearest.help_basic.return_value = ['nearest basic help']
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        mock_nearest.help_basic.assert_called_once()
+        self.assertEqual(result, ['nearest basic help'])
+
+    def test_process_case_insensitive_full_flag(self):
+        """Test that 'help nearest FULL' returns full help."""
+        packet = MagicMock()
+        packet.message_text = 'help nearest FULL'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+        mock_nearest.help_full.return_value = ['nearest full help']
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        mock_nearest.help_full.assert_called_once()
+        self.assertEqual(result, ['nearest full help'])
+
+    def test_process_mixed_case_full_flag(self):
+        """Test that 'help nearest Full' returns full help."""
+        packet = MagicMock()
+        packet.message_text = 'help nearest Full'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+        mock_nearest.help_full.return_value = ['nearest full help']
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        mock_nearest.help_full.assert_called_once()
+        self.assertEqual(result, ['nearest full help'])
 
 
 class TestNearestPluginHelp(unittest.TestCase):

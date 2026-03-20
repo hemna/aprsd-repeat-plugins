@@ -44,9 +44,9 @@ class TieredHelpMixin(abc.ABC):
         This is called by APRSD's built-in HelpPlugin.
 
         Returns:
-            Result of help_basic().
+            Result of help_basic(), validated for message length.
         """
-        return self.help_basic()
+        return self._validate_help_messages(self.help_basic())
 
     def _validate_help_messages(self, messages: list[str]) -> list[str]:
         """Log warning if any message exceeds APRS limit.
@@ -94,17 +94,16 @@ class RepeatHelpPlugin(TieredHelpMixin, plugin.APRSDRegexCommandPluginBase):
         """Plugin setup."""
         self.enabled = True
 
-    def _parse_help_message(self, message: str) -> tuple[str, str | None, bool]:
-        """Parse help message to extract command, plugin name, and full flag.
+    def _parse_help_message(self, message: str) -> tuple[str | None, bool]:
+        """Parse help message to extract plugin name and full flag.
 
         Args:
             message: The message text (e.g., "help nearest full")
 
         Returns:
-            Tuple of (command, plugin_name or None, is_full bool)
+            Tuple of (plugin_name or None, is_full bool)
         """
         parts = message.strip().lower().split()
-        cmd = parts[0] if parts else ''
         plugin_name = None
         is_full = False
 
@@ -113,7 +112,7 @@ class RepeatHelpPlugin(TieredHelpMixin, plugin.APRSDRegexCommandPluginBase):
         if len(parts) >= 3 and parts[2] == 'full':
             is_full = True
 
-        return cmd, plugin_name, is_full
+        return plugin_name, is_full
 
     def _get_repeat_plugins(self) -> dict:
         """Get all enabled REPEAT plugins that have TieredHelpMixin.
@@ -149,7 +148,7 @@ class RepeatHelpPlugin(TieredHelpMixin, plugin.APRSDRegexCommandPluginBase):
         LOG.info('RepeatHelpPlugin')
 
         message = packet.message_text
-        _, plugin_name, is_full = self._parse_help_message(message)
+        plugin_name, is_full = self._parse_help_message(message)
 
         # Get available REPEAT plugins
         plugins = self._get_repeat_plugins()
@@ -168,9 +167,11 @@ class RepeatHelpPlugin(TieredHelpMixin, plugin.APRSDRegexCommandPluginBase):
         if plugin_name in plugins:
             p = plugins[plugin_name]
             if is_full:
-                return p.help_full()
-            return p.help_basic()
+                return self._validate_help_messages(p.help_full())
+            return self._validate_help_messages(p.help_basic())
 
-        # Unknown plugin
-        available = ', '.join(sorted(plugins.keys()))
-        return f"Unknown plugin '{plugin_name}'. Available: {available}"
+        # Unknown plugin - handle empty plugins case
+        if plugins:
+            available = ', '.join(sorted(plugins.keys()))
+            return f"Unknown plugin '{plugin_name}'. Available: {available}"
+        return f"Unknown plugin '{plugin_name}'. No plugins available"
