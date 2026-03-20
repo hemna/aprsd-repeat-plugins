@@ -205,5 +205,84 @@ class TestRepeatHelpPluginProcess(unittest.TestCase):
         self.assertEqual(result, 'No plugins available')
 
 
+from aprsd_repeat_plugins.nearest import NearestObjectPlugin, NearestPlugin
+
+
+class TestNearestPluginHelp(unittest.TestCase):
+    def setUp(self):
+        self.plugin = NearestPlugin()
+
+    def test_is_tiered_help_mixin(self):
+        self.assertIsInstance(self.plugin, TieredHelpMixin)
+
+    def test_help_basic_returns_list(self):
+        result = self.plugin.help_basic()
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 1)
+        self.assertLessEqual(len(result), 2)
+
+    def test_help_full_returns_list(self):
+        result = self.plugin.help_full()
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 4)
+
+    def test_help_basic_messages_under_limit(self):
+        for msg in self.plugin.help_basic():
+            self.assertLessEqual(
+                len(msg),
+                MAX_APRS_MSG_LEN,
+                f'Message too long ({len(msg)} chars): {msg}',
+            )
+
+    def test_help_full_messages_under_limit(self):
+        for msg in self.plugin.help_full():
+            self.assertLessEqual(
+                len(msg),
+                MAX_APRS_MSG_LEN,
+                f'Message too long ({len(msg)} chars): {msg}',
+            )
+
+    def test_help_returns_help_basic(self):
+        self.assertEqual(self.plugin.help(), self.plugin.help_basic())
+
+
+class TestNearestObjectPluginHelp(unittest.TestCase):
+    def setUp(self):
+        self.plugin = NearestObjectPlugin()
+
+    def test_is_tiered_help_mixin(self):
+        self.assertIsInstance(self.plugin, TieredHelpMixin)
+
+    def test_help_basic_returns_list(self):
+        result = self.plugin.help_basic()
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 1)
+        self.assertLessEqual(len(result), 2)
+
+    def test_help_full_returns_list(self):
+        result = self.plugin.help_full()
+        self.assertIsInstance(result, list)
+        self.assertGreaterEqual(len(result), 4)
+
+    def test_help_basic_messages_under_limit(self):
+        for msg in self.plugin.help_basic():
+            self.assertLessEqual(
+                len(msg),
+                MAX_APRS_MSG_LEN,
+                f'Message too long ({len(msg)} chars): {msg}',
+            )
+
+    def test_help_full_messages_under_limit(self):
+        for msg in self.plugin.help_full():
+            self.assertLessEqual(
+                len(msg),
+                MAX_APRS_MSG_LEN,
+                f'Message too long ({len(msg)} chars): {msg}',
+            )
+
+    def test_help_returns_help_basic(self):
+        self.assertEqual(self.plugin.help(), self.plugin.help_basic())
+
+
 if __name__ == '__main__':
     unittest.main()

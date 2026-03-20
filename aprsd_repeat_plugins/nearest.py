@@ -11,6 +11,7 @@ from oslo_config import cfg
 
 import aprsd_repeat_plugins
 from aprsd_repeat_plugins import conf  # noqa
+from aprsd_repeat_plugins.help import TieredHelpMixin
 
 CONF = cfg.CONF
 LOG = logging.getLogger('APRSD')
@@ -113,6 +114,7 @@ class NoAPRSFILocationException(Exception):
 
 
 class NearestPlugin(
+    TieredHelpMixin,
     plugin.APRSDRegexCommandPluginBase,
     plugin.APRSFIKEYMixin,
 ):
@@ -130,14 +132,22 @@ class NearestPlugin(
     command_regex = r'^([n]|[n]\s|nearest)'
     command_name = 'nearest'
 
-    def help(self):
-        _help = [
-            'nearest: Return nearest repeaters to your last beacon.',
-            "nearest: Send 'n [count] [band] [+filter]'",
-            'nearest: band: example: 2m, 70cm',
-            'nearest: filter: ex: +echo or +irlp',
+    def help_basic(self) -> list[str]:
+        return [
+            'n [#] [band] [+filter] ex: n 3 70cm +echo',
+            'bands:2m,70cm,6m,1.25m filters:echo,dmr,dstar',
         ]
-        return _help
+
+    def help_full(self) -> list[str]:
+        return [
+            'n [#] [band] [+filter] - find nearest repeaters',
+            'bands: 2m,70cm,6m,1.25m,33cm,23cm,13cm,9cm,5cm,3cm',
+            'filters: echo,irlp,dmr,dstar,ares,races,skywarn',
+            'filters: allstar,wires,fm',
+            'response: CALL FREQ OFFSET TONE DIST DIR',
+            'ex: n 3 70cm +echo (3 70cm echolink repeaters)',
+            'ex: n 5 2m +dmr (5 2m DMR repeaters)',
+        ]
 
     @staticmethod
     def isfloat(value):
@@ -392,14 +402,20 @@ class NearestObjectPlugin(NearestPlugin):
     command_regex = r'^([o]|[o]\s|object)'
     command_name = 'object'
 
-    def help(self):
-        _help = [
-            'object: Return nearest repeaters as APRS object to your last beacon.',
-            "object: Send 'o [count] [band] [+filter]'",
-            'object: band: example: 2m, 70cm',
-            'object: filter: ex: +echo or +irlp',
+    def help_basic(self) -> list[str]:
+        return [
+            'o [#] [band] [+filter] ex: o 2 2m +irlp',
+            'bands:2m,70cm,6m,1.25m filters:echo,dmr,dstar',
         ]
-        return _help
+
+    def help_full(self) -> list[str]:
+        return [
+            'o [#] [band] [+filter] - repeaters as APRS objects',
+            'bands: 2m,70cm,6m,1.25m,33cm,23cm,13cm,9cm,5cm,3cm',
+            'filters: echo,irlp,dmr,dstar,ares,races,skywarn',
+            'filters: allstar,wires,fm',
+            'ex: o 2 70cm (2 nearest 70cm as objects)',
+        ]
 
     def decdeg2dms(self, degrees_decimal):
         is_positive = degrees_decimal >= 0
