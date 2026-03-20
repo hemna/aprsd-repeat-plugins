@@ -251,6 +251,44 @@ You: v
 APRSD: APRS REPEAT Version: 1.0.0
 ```
 
+### Help System
+
+The REPEAT plugins include a tiered help system to provide concise or detailed
+help over APRS without flooding the network.
+
+#### Basic Help
+
+Send `help <plugin>` for a quick syntax reference (1-2 messages):
+
+```
+help nearest
+help object
+help version
+```
+
+#### Detailed Help
+
+Send `help <plugin> full` for complete documentation (4-8 messages):
+
+```
+help nearest full
+help object full
+```
+
+#### RepeatHelpPlugin Configuration
+
+To use the REPEAT help system, enable `RepeatHelpPlugin` and disable APRSD's
+built-in HelpPlugin:
+
+```yaml
+aprsd:
+  enabled_plugins:
+    - aprsd_repeat_plugins.help.RepeatHelpPlugin
+    - aprsd_repeat_plugins.nearest.NearestPlugin
+    - aprsd_repeat_plugins.nearest.NearestObjectPlugin
+    - aprsd_repeat_plugins.version.VersionPlugin
+```
+
 ## Response Format
 
 The `NearestPlugin` returns responses in the following format:

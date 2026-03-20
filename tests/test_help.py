@@ -9,6 +9,8 @@ from aprsd_repeat_plugins.help import (
     RepeatHelpPlugin,
     TieredHelpMixin,
 )
+from aprsd_repeat_plugins.nearest import NearestObjectPlugin, NearestPlugin
+from aprsd_repeat_plugins.version import VersionPlugin
 
 
 class MockPlugin(TieredHelpMixin):
@@ -205,9 +207,6 @@ class TestRepeatHelpPluginProcess(unittest.TestCase):
         self.assertEqual(result, 'No plugins available')
 
 
-from aprsd_repeat_plugins.nearest import NearestObjectPlugin, NearestPlugin
-
-
 class TestNearestPluginHelp(unittest.TestCase):
     def setUp(self):
         self.plugin = NearestPlugin()
@@ -284,9 +283,6 @@ class TestNearestObjectPluginHelp(unittest.TestCase):
         self.assertEqual(self.plugin.help(), self.plugin.help_basic())
 
 
-from aprsd_repeat_plugins.version import VersionPlugin
-
-
 class TestVersionPluginHelp(unittest.TestCase):
     def setUp(self):
         self.plugin = VersionPlugin()
@@ -322,6 +318,42 @@ class TestVersionPluginHelp(unittest.TestCase):
 
     def test_help_returns_help_basic(self):
         self.assertEqual(self.plugin.help(), self.plugin.help_basic())
+
+
+class TestHelpIntegration(unittest.TestCase):
+    """Integration tests for the full help flow."""
+
+    def test_all_basic_help_messages_under_limit(self):
+        """Verify all plugins have compliant basic help messages."""
+        plugins = [
+            NearestPlugin(),
+            NearestObjectPlugin(),
+            VersionPlugin(),
+            RepeatHelpPlugin(),
+        ]
+        for p in plugins:
+            for msg in p.help_basic():
+                self.assertLessEqual(
+                    len(msg),
+                    MAX_APRS_MSG_LEN,
+                    f'{p.command_name} basic help too long ({len(msg)}): {msg}',
+                )
+
+    def test_all_full_help_messages_under_limit(self):
+        """Verify all plugins have compliant full help messages."""
+        plugins = [
+            NearestPlugin(),
+            NearestObjectPlugin(),
+            VersionPlugin(),
+            RepeatHelpPlugin(),
+        ]
+        for p in plugins:
+            for msg in p.help_full():
+                self.assertLessEqual(
+                    len(msg),
+                    MAX_APRS_MSG_LEN,
+                    f'{p.command_name} full help too long ({len(msg)}): {msg}',
+                )
 
 
 if __name__ == '__main__':
