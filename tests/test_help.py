@@ -2,8 +2,13 @@
 """Tests for tiered help system."""
 
 import unittest
+from unittest.mock import MagicMock, patch
 
-from aprsd_repeat_plugins.help import MAX_APRS_MSG_LEN, TieredHelpMixin
+from aprsd_repeat_plugins.help import (
+    MAX_APRS_MSG_LEN,
+    RepeatHelpPlugin,
+    TieredHelpMixin,
+)
 
 
 class MockPlugin(TieredHelpMixin):
@@ -52,6 +57,152 @@ class TestTieredHelpMixin(unittest.TestCase):
         # Should not raise any warnings
         result = self.plugin._validate_help_messages([short_msg])
         self.assertEqual(result, [short_msg])
+
+
+class TestRepeatHelpPlugin(unittest.TestCase):
+    def setUp(self):
+        self.plugin = RepeatHelpPlugin()
+
+    def test_command_regex_matches_help(self):
+        import re
+
+        pattern = re.compile(self.plugin.command_regex)
+        self.assertIsNotNone(pattern.match('help'))
+        self.assertIsNotNone(pattern.match('Help'))
+        self.assertIsNotNone(pattern.match('h'))
+        self.assertIsNotNone(pattern.match('H'))
+
+    def test_command_name(self):
+        self.assertEqual(self.plugin.command_name, 'help')
+
+    def test_help_basic_returns_list(self):
+        result = self.plugin.help_basic()
+        self.assertIsInstance(result, list)
+
+    def test_help_full_returns_list(self):
+        result = self.plugin.help_full()
+        self.assertIsInstance(result, list)
+
+
+class TestRepeatHelpPluginParsing(unittest.TestCase):
+    def setUp(self):
+        self.plugin = RepeatHelpPlugin()
+
+    def test_parse_help_alone(self):
+        cmd, plugin_name, is_full = self.plugin._parse_help_message('help')
+        self.assertEqual(cmd, 'help')
+        self.assertIsNone(plugin_name)
+        self.assertFalse(is_full)
+
+    def test_parse_help_plugin(self):
+        cmd, plugin_name, is_full = self.plugin._parse_help_message('help nearest')
+        self.assertEqual(cmd, 'help')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertFalse(is_full)
+
+    def test_parse_help_plugin_full(self):
+        cmd, plugin_name, is_full = self.plugin._parse_help_message('help nearest full')
+        self.assertEqual(cmd, 'help')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertTrue(is_full)
+
+    def test_parse_h_shorthand(self):
+        cmd, plugin_name, is_full = self.plugin._parse_help_message('h')
+        self.assertEqual(cmd, 'h')
+        self.assertIsNone(plugin_name)
+        self.assertFalse(is_full)
+
+    def test_parse_h_plugin(self):
+        cmd, plugin_name, is_full = self.plugin._parse_help_message('h nearest')
+        self.assertEqual(cmd, 'h')
+        self.assertEqual(plugin_name, 'nearest')
+        self.assertFalse(is_full)
+
+
+class TestRepeatHelpPluginProcess(unittest.TestCase):
+    """Tests for RepeatHelpPlugin.process() dispatch logic."""
+
+    def setUp(self):
+        self.plugin = RepeatHelpPlugin()
+
+    def test_process_help_alone_returns_plugin_list(self):
+        """Test that 'help' alone lists available plugins."""
+        packet = MagicMock()
+        packet.message_text = 'help'
+
+        # Mock _get_repeat_plugins to return known plugins
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+        mock_nearest.help_basic.return_value = ['nearest help']
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
+        self.assertIn('plugins:', result[1])
+
+    def test_process_help_plugin_returns_basic_help(self):
+        """Test that 'help nearest' returns basic help."""
+        packet = MagicMock()
+        packet.message_text = 'help nearest'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+        mock_nearest.help_basic.return_value = ['nearest basic help']
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        mock_nearest.help_basic.assert_called_once()
+        self.assertEqual(result, ['nearest basic help'])
+
+    def test_process_help_plugin_full_returns_full_help(self):
+        """Test that 'help nearest full' returns full help."""
+        packet = MagicMock()
+        packet.message_text = 'help nearest full'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+        mock_nearest.help_full.return_value = ['nearest full help line 1', 'line 2']
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        mock_nearest.help_full.assert_called_once()
+        self.assertEqual(result, ['nearest full help line 1', 'line 2'])
+
+    def test_process_unknown_plugin_returns_error(self):
+        """Test that 'help unknown' returns error message."""
+        packet = MagicMock()
+        packet.message_text = 'help unknown'
+
+        mock_nearest = MagicMock()
+        mock_nearest.command_name = 'nearest'
+
+        with patch.object(
+            self.plugin, '_get_repeat_plugins', return_value={'nearest': mock_nearest}
+        ):
+            result = self.plugin.process(packet)
+
+        self.assertIn("Unknown plugin 'unknown'", result)
+        self.assertIn('nearest', result)
+
+    def test_process_help_no_plugins_returns_message(self):
+        """Test that 'help' with no plugins returns appropriate message."""
+        packet = MagicMock()
+        packet.message_text = 'help'
+
+        with patch.object(self.plugin, '_get_repeat_plugins', return_value={}):
+            result = self.plugin.process(packet)
+
+        self.assertEqual(result, 'No plugins available')
 
 
 if __name__ == '__main__':

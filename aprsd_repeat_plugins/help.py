@@ -3,6 +3,10 @@
 import abc
 import logging
 
+from aprsd import plugin
+
+import aprsd_repeat_plugins
+
 LOG = logging.getLogger('APRSD')
 
 MAX_APRS_MSG_LEN = 67
@@ -60,3 +64,113 @@ class TieredHelpMixin(abc.ABC):
                     f'({len(msg)}): {msg}',
                 )
         return messages
+
+
+class RepeatHelpPlugin(TieredHelpMixin, plugin.APRSDRegexCommandPluginBase):
+    """Help plugin for APRSD REPEAT service.
+
+    Replaces APRSD's built-in HelpPlugin with tiered help support.
+    Handles:
+    - help (list available plugins)
+    - help <plugin> (basic help for plugin)
+    - help <plugin> full (detailed help for plugin)
+    """
+
+    version = aprsd_repeat_plugins.__version__
+    command_regex = r'^[hH](elp)?'
+    command_name = 'help'
+
+    def help_basic(self) -> list[str]:
+        return ['help <plugin> or help <plugin> full']
+
+    def help_full(self) -> list[str]:
+        return [
+            'help - list available plugins',
+            'help <plugin> - basic help for plugin',
+            'help <plugin> full - detailed help',
+        ]
+
+    def setup(self):
+        """Plugin setup."""
+        self.enabled = True
+
+    def _parse_help_message(self, message: str) -> tuple[str, str | None, bool]:
+        """Parse help message to extract command, plugin name, and full flag.
+
+        Args:
+            message: The message text (e.g., "help nearest full")
+
+        Returns:
+            Tuple of (command, plugin_name or None, is_full bool)
+        """
+        parts = message.strip().lower().split()
+        cmd = parts[0] if parts else ''
+        plugin_name = None
+        is_full = False
+
+        if len(parts) >= 2:
+            plugin_name = parts[1]
+        if len(parts) >= 3 and parts[2] == 'full':
+            is_full = True
+
+        return cmd, plugin_name, is_full
+
+    def _get_repeat_plugins(self) -> dict:
+        """Get all enabled REPEAT plugins that have TieredHelpMixin.
+
+        Returns:
+            Dict mapping command_name to plugin instance.
+        """
+        from aprsd.plugin import PluginManager
+
+        pm = PluginManager()
+        plugins = {}
+
+        for p in pm.get_plugins():
+            if (
+                p.enabled
+                and hasattr(p, 'command_name')
+                and isinstance(p, TieredHelpMixin)
+                and p.command_name != 'help'  # Exclude self
+            ):
+                plugins[p.command_name.lower()] = p
+
+        return plugins
+
+    def process(self, packet):
+        """Process help command.
+
+        Args:
+            packet: APRS message packet.
+
+        Returns:
+            Help response string or list of strings.
+        """
+        LOG.info('RepeatHelpPlugin')
+
+        message = packet.message_text
+        _, plugin_name, is_full = self._parse_help_message(message)
+
+        # Get available REPEAT plugins
+        plugins = self._get_repeat_plugins()
+
+        if plugin_name is None:
+            # User sent just "help" - list available plugins
+            plugin_names = sorted(plugins.keys())
+            if plugin_names:
+                return [
+                    "Send 'help <plugin>' or 'help <plugin> full'",
+                    f'plugins: {" ".join(plugin_names)}',
+                ]
+            return 'No plugins available'
+
+        # User wants help for a specific plugin
+        if plugin_name in plugins:
+            p = plugins[plugin_name]
+            if is_full:
+                return p.help_full()
+            return p.help_basic()
+
+        # Unknown plugin
+        available = ', '.join(sorted(plugins.keys()))
+        return f"Unknown plugin '{plugin_name}'. Available: {available}"
