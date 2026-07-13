@@ -131,6 +131,7 @@ class NearestPlugin(
     version = aprsd_repeat_plugins.__version__
     command_regex = r'^([n]|[n]\s|nearest)'
     command_name = 'nearest'
+    command_type = 'nearest'
 
     def help_basic(self) -> list[str]:
         return [
@@ -315,6 +316,7 @@ class NearestPlugin(
                 'count': count,
                 'band': band,
                 'callsign': fromcall,
+                'command_type': self.command_type,
             }
             if filters:
                 params['filters'] = ','.join(filters)
@@ -401,6 +403,7 @@ class NearestObjectPlugin(NearestPlugin):
     version = aprsd_repeat_plugins.__version__
     command_regex = r'^([o]|[o]\s|object)'
     command_name = 'object'
+    command_type = 'object'
 
     def help_basic(self) -> list[str]:
         return [
